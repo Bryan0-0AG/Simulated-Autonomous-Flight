@@ -6,10 +6,11 @@
 
 bool check_ground_collision(Body& body, World& world) {    
     bool currently_grounded = false;
+    float realgroundY = world.groundY + body.size;
 
     // 1. Resolve penetration and bounce
-    if (body.position.y < world.groundY) {
-        body.position.y = world.groundY;
+    if (body.position.y < realgroundY) {
+        body.position.y = realgroundY;
 
         if (body.velocity.y < 0) {
             // Resting contact threshold

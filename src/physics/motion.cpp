@@ -3,6 +3,7 @@
 #include "physics/physics_config.h"
 #include "utils/vector2.h"
 #include "body.h"
+#include "utils/math_utils.h"
 
 void apply_impulse(Body& body, Vector2 impulse) {
     // DeltaV = Impulse / Mass
@@ -37,6 +38,9 @@ void update_motion(Body& body, float dt) {
     // 2. Integrate velocity
     body.velocity.x += acceleration.x * dt;
     body.velocity.y += acceleration.y * dt;
+
+    snap_zero(body.velocity.x);
+    snap_zero(body.velocity.y);
 
     // 3. Apply Ground Friction
     // Using a more robust method: if grounded, apply friction that can't reverse direction
