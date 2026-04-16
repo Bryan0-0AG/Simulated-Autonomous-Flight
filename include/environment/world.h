@@ -2,11 +2,12 @@
 #define WORLD_H
 
 #include "utils/vector2.h"
+#include "body.h"
 
 struct World {
     float groundY = 0.0f;
 };
 
-bool check_ground_collision(Vector2& position, Vector2& velocity, World& world);
+bool check_ground_collision(Body& body, World& world);
 
 #endif

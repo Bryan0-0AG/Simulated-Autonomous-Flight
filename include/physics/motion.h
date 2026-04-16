@@ -1,8 +1,10 @@
 #ifndef MOTION_H
 #define MOTION_H
 
-#include "utils/vector2.h"
+#include "body.h"
 
-void update_physics(Vector2& pos, Vector2& vel, float dt);
+void apply_impulse(Body& body, Vector2 impulse);
+void apply_forces(Body& body, bool is_grounded);
+void update_motion(Body& body, float dt);
 
 #endif
