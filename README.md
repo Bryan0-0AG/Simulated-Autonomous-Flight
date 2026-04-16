@@ -1,25 +1,29 @@
 # ✈️ Simulated Autonomous Flight — Advanced Physics Engine
 
-> A high-performance C++ physics simulation engine designed for autonomous flight. Currently implements robust **Euler Integration**, force systems, environment interaction, and **real-time 2D visualization**.
+> A high-performance C++ physics simulation engine designed for autonomous flight. Currently implements robust **Multi-Body Dynamics**, force systems, environment interaction, and **real-time 2D visualization**.
 
 ---
 
 ## 📋 Current Status
 
-**Phase 6 (Visualization) Preview.** The simulation now features a real-time 2D window using **SFML**, allowing for visual debugging of physics, collisions, and movement.
+**Phase 6 (Visualization) Complete.** The simulation now supports **Multi-Body entities**, rendering multiple physical bodies simultaneously with randomized properties and real-time console telemetry.
 
 ---
 
 ## ✨ Key Features
 
-- **Force-Based Physics**: Implements Newton's Second Law ($F=ma$) using Semi-Implicit Euler integration.
-- **Real-Time 2D Visualization**: Powered by **SFML**, rendering physical bodies with customizable size and color in a dedicated window.
-- **Environment Interaction**: Realistic ground detection handling object size and configurable `ENERGY_RESTITUTION` (bouncing).
+- **Multi-Body Dynamics**: Simultaneous simulation of multiple independent physical entities using `std::vector` and unique `id` tracking.
+- **Force-Based Physics**: Implements Newton's Second Law ($F=ma$) using Semi-Implicit Euler integration for every object in the scene.
+- **Procedural Generation**: Integrated `randint` utility based on `std::mt19937` for randomized spawning (colors, impulses, sizes).
+- **Real-Time 2D Visualization**: Powered by **SFML**, featuring:
+  - Coordinate Mapping (World-to-Screen inversion).
+  - Dynamic color and size rendering per entity.
+  - High-precision frame synchronization.
+- **Environment Interaction**: Realistic ground detection with configurable `ENERGY_RESTITUTION` and ground tracking per body.
 - **Friction & Stability**:
   - **Air Friction (Drag)**: Linear air resistance opposing movement.
-  - **Ground Friction**: Kinetic friction with robust clamping to prevent horizontal jitter.
-  - **Snap to Zero**: Math utility to eliminate micro-movements and floating-point noise.
-- **Coordinate Mapping**: World-to-Screen coordinate transformation (Y-axis inversion) for intuitive visualization.
+  - **Ground Friction**: Kinetic friction with robust clamping via `snap_zero` utility to prevent horizontal jitter.
+- **Detailed Telemetry**: Console logging system providing per-second snapshots of every simulated body's position and velocity.
 
 ---
 
@@ -37,10 +41,10 @@ SimulatedAutonomousFlight/
 │   │   └── BasicRenderer.h   # SFML Visualization class
 │   ├── utils/
 │   │   ├── vector2.h         # Basic 2D math structures
-│   │   └── math_utils.h      # Precision utilities (Snap to Zero, etc)
-│   └── body.h                # Physical body definitions (color, size, etc)
+│   │   └── math_utils.h      # Precision utilities (Snap to Zero, Randint)
+│   └── body.h                # Multi-body physical definitions (color, id, grounded)
 ├── src/
-│   ├── main.cpp              # Real-time simulation loop
+│   ├── main.cpp              # Multi-body simulation loop & logging
 │   ├── physics/
 │   │   └── motion.cpp        # Force and integration implementation
 │   ├── environment/
@@ -64,7 +68,7 @@ SimulatedAutonomousFlight/
 
 ```bash
 make       # Build the application (links SFML)
-make run   # Run the simulation + 2D window
+make run   # Run the multi-body simulation
 make clean # Remove binary files
 ```
 
@@ -79,7 +83,7 @@ make clean # Remove binary files
 | 3 – Environment | World bounds, collision detection, Stability Fixes | ✅ Done |
 | 4 – Control | PID controller, point navigation, **Thrust system** | 🔜 Next |
 | 5 – AI | Pathfinding (A*), obstacle avoidance | ⬜ |
-| 6 – Visualization | **SFML 2D Renderer**, trajectory logging | ✅ Done |
+| 6 – Visualization | **Multi-Body SFML Renderer**, telemetry logs | ✅ Done |
 | 7 – Polish | Metrics, comparisons, demo video | ⬜ |
 
 ---
@@ -88,6 +92,7 @@ make clean # Remove binary files
 
 - **C++17** — Focus on efficiency and DOD (Data-Oriented Design)
 - **SFML 3.0** — High-performance 2D multimedia framework
+- **MT19937** — Standard Mersenne Twister for high-quality random generation
 - **Make** — Cross-platform build automation
 
 ---

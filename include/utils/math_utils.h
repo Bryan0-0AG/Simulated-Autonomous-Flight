@@ -3,5 +3,6 @@
 
 float fast_pow(float base, float exp);
 void snap_zero(float& value, float epsilon = 1e-4f);
+int randint(int min, int max);
 
 #endif
