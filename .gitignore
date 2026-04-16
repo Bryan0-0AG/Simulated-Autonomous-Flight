@@ -1,5 +1,6 @@
 # Custom
 planned_structure/
+*.exe
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
