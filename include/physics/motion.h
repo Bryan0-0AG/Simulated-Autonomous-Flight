@@ -1,6 +1,8 @@
 #ifndef MOTION_H
 #define MOTION_H
 
-void update_position(float& position, float velocity, float dt);
+#include "utils/vector2.h"
+
+void update_physics(Vector2& pos, Vector2& vel, float dt);
 
 #endif

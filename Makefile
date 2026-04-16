@@ -1,7 +1,7 @@
 CXX = g++
 CXXFLAGS = -Wall -std=c++17 -Iinclude
 
-SRC = src/main.cpp src/physics/motion.cpp
+SRC = src/main.cpp src/physics/motion.cpp src/utils/math_utils.cpp src/environment/world.cpp
 OUT = app
 
 all:
