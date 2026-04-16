@@ -1,6 +1,7 @@
 # Custom
 planned_structure/
 *.exe
+telemetry.csv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

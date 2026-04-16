@@ -1,29 +1,28 @@
 # ✈️ Simulated Autonomous Flight — Advanced Physics Engine
 
-> A high-performance C++ physics simulation engine designed for autonomous flight. Currently implements robust **Multi-Body Dynamics**, force systems, environment interaction, and **real-time 2D visualization**.
+> A high-performance C++ physics simulation engine designed for autonomous flight. Currently implements robust **Multi-Body Dynamics**, **Automated Telemetry**, and **Post-Processing Data Analysis**.
 
 ---
 
 ## 📋 Current Status
 
-**Phase 6 (Visualization) Complete.** The simulation now supports **Multi-Body entities**, rendering multiple physical bodies simultaneously with randomized properties and real-time console telemetry.
+**Integrated Analytics System.** The simulation now creates persistent binary/text logs and includes a Python-powered suite for trajectory and performance visualization.
 
 ---
 
 ## ✨ Key Features
 
 - **Multi-Body Dynamics**: Simultaneous simulation of multiple independent physical entities using `std::vector` and unique `id` tracking.
-- **Force-Based Physics**: Implements Newton's Second Law ($F=ma$) using Semi-Implicit Euler integration for every object in the scene.
-- **Procedural Generation**: Integrated `randint` utility based on `std::mt19937` for randomized spawning (colors, impulses, sizes).
-- **Real-Time 2D Visualization**: Powered by **SFML**, featuring:
-  - Coordinate Mapping (World-to-Screen inversion).
-  - Dynamic color and size rendering per entity.
-  - High-precision frame synchronization.
-- **Environment Interaction**: Realistic ground detection with configurable `ENERGY_RESTITUTION` and ground tracking per body.
+- **Automated Telemetry**: Integrated C++ `TelemetryLogger` that generates timestamped CSV logs for every simulation run.
+- **Post-Processing Analytics**: Python-based diagnostic suite (`pandas` & `matplotlib`) to plot:
+  - Multi-agent spatial trajectories (2D bird's-eye view).
+  - Velocity components over time for performance profiling.
+- **Force-Based Physics**: Implements Newton's Second Law ($F=ma$) using Semi-Implicit Euler integration.
+- **Real-Time 2D Visualization**: Powered by **SFML**, featuring world-to-screen mapping and dynamic per-entity rendering.
+- **Environment Interaction**: Realistic ground detection with configurable `ENERGY_RESTITUTION` and per-body grounding states.
 - **Friction & Stability**:
   - **Air Friction (Drag)**: Linear air resistance opposing movement.
-  - **Ground Friction**: Kinetic friction with robust clamping via `snap_zero` utility to prevent horizontal jitter.
-- **Detailed Telemetry**: Console logging system providing per-second snapshots of every simulated body's position and velocity.
+  - **Ground Friction**: Kinetic friction with robust `snap_zero` clamping.
 
 ---
 
@@ -39,20 +38,20 @@ SimulatedAutonomousFlight/
 │   │   └── world.h           # Environment and collision headers
 │   ├── rendering/
 │   │   └── BasicRenderer.h   # SFML Visualization class
+│   ├── telemetry/
+│   │   └── telemetry_logger.h # Persistent logging system
 │   ├── utils/
 │   │   ├── vector2.h         # Basic 2D math structures
-│   │   └── math_utils.h      # Precision utilities (Snap to Zero, Randint)
-│   └── body.h                # Multi-body physical definitions (color, id, grounded)
+│   │   └── math_utils.h      # Precision & Randomization utilities
+│   └── body.h                # Physical body definitions
 ├── src/
-│   ├── main.cpp              # Multi-body simulation loop & logging
+│   ├── main.cpp              # Simulation loop & telemetry orchestration
 │   ├── physics/
-│   │   └── motion.cpp        # Force and integration implementation
-│   ├── environment/
-│   │   └── world.cpp         # Collision resolution logic
-│   ├── rendering/
-│   │   └── BasicRenderer.cpp # Rendering implementation
-│   └── utils/
-│       └── math_utils.cpp    # Auxiliary math implementations
+│   │   └── motion.cpp        # Newton/Euler implementation
+│   └── ...                   # Other implementation files
+├── telemetry/
+│   ├── logs/                 # Folder for CSV simulation reports
+│   └── data_analysis.py      # Python analysis & plotting script
 ├── Makefile                  # Build system (SFML Linking)
 └── README.md
 ```
@@ -64,12 +63,16 @@ SimulatedAutonomousFlight/
 ### Requirements
 - `g++` with C++17 support
 - `make`
-- **SFML 3.x** library installed
+- **SFML 3.x** library
+- **Python 3.x** with `pandas` and `matplotlib` (for analytics)
 
 ```bash
-make       # Build the application (links SFML)
-make run   # Run the multi-body simulation
-make clean # Remove binary files
+# 1. Build and Run Simulation
+make
+make run
+
+# 2. Analyze Latest Results
+python telemetry/data_analysis.py
 ```
 
 ---
@@ -83,17 +86,17 @@ make clean # Remove binary files
 | 3 – Environment | World bounds, collision detection, Stability Fixes | ✅ Done |
 | 4 – Control | PID controller, point navigation, **Thrust system** | 🔜 Next |
 | 5 – AI | Pathfinding (A*), obstacle avoidance | ⬜ |
-| 6 – Visualization | **Multi-Body SFML Renderer**, telemetry logs | ✅ Done |
-| 7 – Polish | Metrics, comparisons, demo video | ⬜ |
+| 6 – Visualization | Multi-Body SFML Renderer | ✅ Done |
+| 7 – Analytics | **Telemetry logs, Python analysis suite** | ✅ Done |
 
 ---
 
 ## 🛠️ Technologies
 
-- **C++17** — Focus on efficiency and DOD (Data-Oriented Design)
-- **SFML 3.0** — High-performance 2D multimedia framework
-- **MT19937** — Standard Mersenne Twister for high-quality random generation
-- **Make** — Cross-platform build automation
+- **C++17** — Engine core and real-time computation.
+- **SFML 3.0** — Real-time window and graphics.
+- **Python 3 (Pandas/Matplotlib)** — Data post-processing and scientific plotting.
+- **Make** — Build automation.
 
 ---
 

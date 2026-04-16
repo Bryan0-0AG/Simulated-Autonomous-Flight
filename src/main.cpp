@@ -5,12 +5,14 @@
 #include "environment/world.h"
 #include "body.h"
 #include "rendering/BasicRenderer.h"
+#include "telemetry/telemetry_logger.h"
 #include <iostream>
 #include <vector>
 
 int main() {
     World world;
     BasicRenderer renderer({800, 600});
+    TelemetryLogger logger;
 
     std::vector<Body> bodies;
 
@@ -59,13 +61,26 @@ int main() {
             std::cout << "\n" << std::string(100, '-') << "\n" << std::endl;
             std::cout << "Second " << seconds_passed << "\n" << std::endl;
             for(auto& body : bodies) {
+                // Console
                 std::cout << " Body " << body.id
                         << "\n\t | pos: " << body.position.x << ", " << body.position.y
                         << "\n\t | vel: " << body.velocity.x << ", " << body.velocity.y
                         << std::endl;
+
+                // Telemetry
+                logger.log(
+                    seconds_passed,
+                    body.id,
+                    body.position.x,
+                    body.position.y,
+                    body.velocity.x,
+                    body.velocity.y
+                );
             }
+
+            // Update time
             accumulator    -= 1.0f;  // ← restar, no resetear a 0 (más preciso)
-            seconds_passed += 1.0f;        
+            seconds_passed += 1.0f;  
         }        
     }
     return 0;
