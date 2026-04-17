@@ -1,9 +1,12 @@
 #include <iostream>
 #include "physics/motion.h"
 #include "physics/physics_config.h"
+#include "physics/forces.h"
 #include "utils/vector2.h"
-#include "body.h"
 #include "utils/math_utils.h"
+#include "vehicle/control_config.h"
+#include "body.h"
+
 
 void apply_impulse(Body& body, Vector2 impulse) {
     // DeltaV = Impulse / Mass
@@ -15,18 +18,15 @@ void apply_impulse(Body& body, Vector2 impulse) {
     body.velocity.y += delta_velocity.y;
 }
 
-void apply_forces(Body& body, bool is_grounded) {
+void apply_forces(Body& body, Vector2 thrust) {
     // Reset forces for current step
     body.force = {0.0f, 0.0f};
 
-    // 1. Air Resistance - Opposes all motion
-    body.force.x -= AIR_FRICTION * body.velocity.x;
-    body.force.y -= AIR_FRICTION * body.velocity.y;
+    Vector2 gravity = compute_gravity(body);
+    Vector2 drag    = compute_drag(body);    
 
-    // 2. Gravity (only if in the air)
-    if (!is_grounded) {
-        body.force.y -= body.mass * GRAVITY;
-    }
+    body.force.x += gravity.x + drag.x + thrust.x;
+    body.force.y += gravity.y + drag.y + thrust.y;
 }
 
 void update_motion(Body& body, float dt) {

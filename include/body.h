@@ -2,6 +2,7 @@
 #define BODY_H
 
 #include "utils/vector2.h"
+#include "vehicle/controller.h"
 
 struct Body {
     // Physics
@@ -13,13 +14,16 @@ struct Body {
     float mass = 1.0f;
     bool grounded = false;
 
-
     // Render
     float size = 1.0f;
     int color[3] = {255, 255, 255};
 
     // Control    
     int id = 0;
+    float angle = 0.0f;
+    float thrust = 0.0f;
+    Vector2 target = {0.0f, 0.0f};
+    Controller controller;
 };
 
 #endif

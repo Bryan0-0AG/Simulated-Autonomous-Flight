@@ -1,11 +1,19 @@
+// Physics
 #include "physics/motion.h"
 #include "physics/physics_config.h"
-#include "utils/vector2.h"
-#include "utils/math_utils.h"
+#include "physics/forces.h"
+// Control
+#include "vehicle/control_config.h"
+#include "vehicle/controller.h"
+// Rendering
+#include "rendering/BasicRenderer.h"
 #include "environment/world.h"
 #include "body.h"
-#include "rendering/BasicRenderer.h"
+// Telemetry
 #include "telemetry/telemetry_logger.h"
+// Libraries / Utils
+#include "utils/vector2.h"
+#include "utils/math_utils.h"
 #include <iostream>
 #include <vector>
 
@@ -24,30 +32,31 @@ int main() {
         body.mass     = 1.0f;
         body.position = {0.0f, 0.0f};
         body.size     = 10.0f;
-        body.color[0] = randint(0, 255); // R
-        body.color[1] = randint(0, 255); // G
-        body.color[2] = randint(0, 255); // B
+        body.color[0] = randint(50, 255); // R
+        body.color[1] = randint(50, 255); // G
+        body.color[2] = randint(50, 255); // B
         body.id       = i;
-        bodies.push_back(body);
-
-        Vector2 impulse = {
-            static_cast<float>(randint(30, 70)),
-            static_cast<float>(randint(30, 70))
+        body.target   = {
+            static_cast<float>(randint(40, 500)),
+            static_cast<float>(randint(40, 500))
         };
-
-        apply_impulse(bodies.back(), impulse);
+        body.controller = Controller();
+        bodies.push_back(body);
     }
 
     while (renderer.isOpen()) {
-        renderer.handleEvents(); 
-        
-        // Física
-        for(auto& body : bodies) {            
+        renderer.handleEvents();
+
+        // Control -> Física
+        for(auto& body : bodies) {  
+            ActuatorOutput control_output = body.controller.update(body.target, body.position, DT);
+            Vector2 thrust_force = compute_thrust(control_output);         
+          
             body.grounded = check_ground_collision(body, world);
-            apply_forces(body, body.grounded);
+            apply_forces(body, thrust_force);
             update_motion(body, DT);            
         }
-        
+
         // Render
         renderer.clear();
         for(auto& body : bodies) {
@@ -65,6 +74,7 @@ int main() {
                 std::cout << " Body " << body.id
                         << "\n\t | pos: " << body.position.x << ", " << body.position.y
                         << "\n\t | vel: " << body.velocity.x << ", " << body.velocity.y
+                        << "\n\t | target: " << body.target.x << ", " << body.target.y
                         << std::endl;
 
                 // Telemetry

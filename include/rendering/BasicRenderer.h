@@ -2,7 +2,6 @@
 #define BASIC_RENDERER_H
 
 #include <SFML/Graphics.hpp>
-#include <optional>
 #include "body.h"
 #include "utils/vector2.h"
 

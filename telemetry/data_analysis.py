@@ -42,6 +42,7 @@ plt.show()
 # =========================
 # VELOCIDAD EN EL TIEMPO
 # =========================
+# Velocidad X
 plt.figure()
 for body_id in df["id"].unique():
     body = df[df["id"] == body_id]
@@ -50,6 +51,19 @@ for body_id in df["id"].unique():
 plt.title("Velocidad X en el tiempo")
 plt.xlabel("Tiempo")
 plt.ylabel("Velocidad X")
+plt.legend()
+plt.grid()
+plt.show()
+
+# Velocidad Y
+plt.figure()
+for body_id in df["id"].unique():
+    body = df[df["id"] == body_id]
+    plt.plot(body["time"], body["vel_y"], label=f"Body {body_id} vel_y")
+
+plt.title("Velocidad Y en el tiempo")
+plt.xlabel("Tiempo")
+plt.ylabel("Velocidad Y")
 plt.legend()
 plt.grid()
 plt.show()
