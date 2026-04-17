@@ -3,6 +3,7 @@
 
 #include "utils/vector2.h"
 #include "vehicle/controller.h"
+#include "vehicle/control_config.h"
 
 struct Body {
     // Physics
@@ -18,10 +19,18 @@ struct Body {
     float size = 1.0f;
     int color[3] = {255, 255, 255};
 
-    // Control    
+    // Control
     int id = 0;
-    float angle = 0.0f;
-    float thrust = 0.0f;
+    float error_x = 0.0f;
+    float error_y = 0.0f;
+    
+    PIDOutput angle_pid;
+    PIDOutput thrust_pid;
+    float angle;
+    float thrust;
+
+    ActuatorOutput actuator_output;
+
     Vector2 target = {0.0f, 0.0f};
     Controller controller;
 };

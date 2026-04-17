@@ -27,7 +27,7 @@ int main() {
     float accumulator    = 0.0f;
     float seconds_passed = 0.0f;
 
-    for(int i = 0; i < 10; i++) {    
+    for(int i = 0; i < 50; i++) {    
         Body body;
         body.mass     = 1.0f;
         body.position = {0.0f, 0.0f};
@@ -37,7 +37,7 @@ int main() {
         body.color[2] = randint(50, 255); // B
         body.id       = i;
         body.target   = {
-            static_cast<float>(randint(40, 500)),
+            static_cast<float>(randint(40, 700)),
             static_cast<float>(randint(40, 500))
         };
         body.controller = Controller();
@@ -49,7 +49,7 @@ int main() {
 
         // Control -> Física
         for(auto& body : bodies) {  
-            ActuatorOutput control_output = body.controller.update(body.target, body.position, DT);
+            ActuatorOutput control_output = body.controller.update(body, DT);
             Vector2 thrust_force = compute_thrust(control_output);         
           
             body.grounded = check_ground_collision(body, world);
@@ -84,7 +84,15 @@ int main() {
                     body.position.x,
                     body.position.y,
                     body.velocity.x,
-                    body.velocity.y
+                    body.velocity.y,
+                    body.target.x,
+                    body.target.y,
+                    body.actuator_output.thrust,
+                    body.actuator_output.angle,
+                    body.error_x,
+                    body.error_y,
+                    body.angle_pid,
+                    body.thrust_pid
                 );
             }
 

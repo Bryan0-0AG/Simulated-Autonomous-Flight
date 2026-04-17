@@ -4,12 +4,13 @@
 #include "vehicle/pid.h"
 #include "vehicle/control_config.h"
 #include "utils/vector2.h"
+class Body;
 
 class Controller {
 public:
     Controller();
 
-    ActuatorOutput update(Vector2 target, Vector2 body_position, float dt);
+    ActuatorOutput update(Body& body, float dt);
 
 private:
     PID pid_x; 
