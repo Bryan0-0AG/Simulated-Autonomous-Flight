@@ -1,8 +1,8 @@
 #ifndef CONTROLLER_H
 #define CONTROLLER_H
 
-#include "vehicle/pid.h"
-#include "vehicle/control_config.h"
+#include "control/pid.h"
+#include "control/control_config.h"
 #include "utils/vector2.h"
 class Body;
 

@@ -1,30 +1,28 @@
 # ✈️ Simulated Autonomous Flight — Advanced Physics Engine
 
-> A high-performance C++ physics simulation engine designed for autonomous flight. Currently implements robust **Multi-Body Dynamics**, **Automated Telemetry**, and **Post-Processing Data Analysis**.
+> A high-performance C++ physics simulation engine designed for autonomous flight. Currently implements robust **Multi-Body Dynamics**, **PID Control**, **Basic AI State Machines**, and **Real-Time Python Dashboards**.
 
 ---
 
 ## 📋 Current Status
 
-**Autonomous Flight System Completed.** The simulation now features fully independent drones governed by individual PID controllers. They are capable of calculating thrust and tilt angles to autonomously navigate towards dynamically assigned target coordinates while countering gravity and air resistance.
+**Autonomous Fleet & Real-Time Analytics Completed.** The simulation features independent drones governed by individual PID controllers and an AI State Machine (managing battery and flight modes). Telemetry is streamed in real-time to an advanced Streamlit dashboard that calculates aggregated metrics (RMSE, Battery Drop, Velocities) while the C++ engine runs the physics.
 
 ---
 
 ## ✨ Key Features
 
-- **Autonomous PID Control**: Individual Proportional-Integral-Derivative (PID) controllers for each entity, allowing precise independent navigation towards (X, Y) target coordinates.
-- **Actuator Mechanics**: Converts logical PID outputs (Angle & Thrust) into physical forces to realistically propel drones, counteracting gravity and drag.
-- **Multi-Body Dynamics**: Simultaneous simulation of multiple independent physical entities using `std::vector` and unique `id` tracking.
-- **Automated Telemetry**: Integrated C++ `TelemetryLogger` that generates timestamped CSV logs for every simulation run.
-- **Post-Processing Analytics**: Python-based diagnostic suite (`pandas` & `matplotlib`) to plot:
-  - Multi-agent spatial trajectories (2D bird's-eye view).
-  - Velocity components over time for performance profiling.
-- **Force-Based Physics**: Implements Newton's Second Law ($F=ma$) using Semi-Implicit Euler integration, with corrected coordinate systems (Y-Up physically mapped to Y-Down visually).
-- **Real-Time 2D Visualization**: Powered by **SFML**, featuring world-to-screen mapping and dynamic per-entity rendering.
-- **Environment Interaction**: Realistic ground detection with configurable `ENERGY_RESTITUTION` and per-body grounding states.
-- **Friction & Stability**:
-  - **Air Friction (Drag)**: Linear air resistance opposing movement.
-  - **Ground Friction**: Kinetic friction with robust `snap_zero` clamping.
+- **Autonomous PID Control**: Individual Proportional-Integral-Derivative (PID) controllers for precise navigation.
+- **AI State Machine**: Basic autonomy allowing drones to switch between states (e.g., `FLYING`, `CHARGING`) based on dynamic battery consumption.
+- **Multi-Body Dynamics**: Simultaneous simulation of multiple independent physical entities interacting with the environment.
+- **Advanced Telemetry System**: 
+  - Streams categorized data (`Physics.csv`, `Control.csv`, `AI.csv`) to a live "Actual Simulation" folder.
+  - Automatically archives logs with timestamps upon simulation closure.
+- **Real-Time Streamlit Dashboard**: 
+  - Python-based interactive analytics suite (`pandas`, `matplotlib`, `streamlit`).
+  - Auto-refreshing visualizers for Spatial Trajectories, Error Convergence (RMSE), Thrust profiles, and Battery lifecycles.
+- **Force-Based Physics**: Implements Newton's Second Law ($F=ma$) using Semi-Implicit Euler integration.
+- **Real-Time 2D Visualization**: Powered by **SFML**, featuring world-to-screen mapping.
 
 ---
 
@@ -33,39 +31,23 @@
 ```
 SimulatedAutonomousFlight/
 ├── include/
-│   ├── physics/
-│   │   ├── motion.h          # Motion update declarations
-│   │   ├── forces.h          # Gravity, drag, and thrust computations
-│   │   └── physics_config.h  # Universal physics constants
-│   ├── vehicle/
-│   │   ├── pid.h             # PID Controller logic
-│   │   ├── actuator.h        # Force translation mechanics
-│   │   ├── controller.h      # Brain of the drone
-│   │   └── control_config.h  # PID tuning and flight dynamics configs
-│   ├── environment/
-│   │   └── world.h           # Environment and collision headers
-│   ├── rendering/
-│   │   └── BasicRenderer.h   # SFML Visualization class
-│   ├── telemetry/
-│   │   └── telemetry_logger.h # Persistent logging system
-│   ├── utils/
-│   │   ├── vector2.h         # Basic 2D math structures
-│   │   └── math_utils.h      # Precision & Randomization utilities
-│   └── body.h                # Physical body definitions
+│   ├── AI/                 # State machines and decision logic
+│   ├── physics/            # Motion and forces
+│   ├── control/            # PID Controller logic
+│   ├── environment/        # Collision headers
+│   ├── rendering/          # SFML Visualization class
+│   ├── telemetry/          # Logger system (Categorized I/O)
+│   └── body.h              # Physical body definitions
 ├── src/
-│   ├── main.cpp              # Simulation loop & telemetry orchestration
-│   ├── physics/
-│   │   ├── motion.cpp        # Newton/Euler implementation
-│   │   └── forces.cpp        # Environmental and actuator forces
-│   ├── vehicle/
-│   │   ├── pid.cpp           # PID calculations
-│   │   ├── controller.cpp    # Angle/Thrust decision making
-│   │   └── actuator.cpp      # Physical force application
-│   └── ...                   # Other implementation files
+│   ├── main.cpp            # Core loop
+│   ├── AI/                 # AI Implementation
+│   ├── physics/            # Physics Engine
+│   └── control/            # PID and actuators
 ├── telemetry/
-│   ├── logs/                 # Folder for CSV simulation reports
-│   └── data_analysis.py      # Python analysis & plotting script
-├── Makefile                  # Build system (SFML Linking)
+│   ├── logs/               # Automated CSV simulation archives
+│   ├── dashboard.py        # Streamlit Real-Time Dashboard
+│   └── run_sim.py          # Python orchestrator for C++ & Web Server
+├── Makefile                # Build system (Auto-launches Python scripts)
 └── README.md
 ```
 
@@ -77,15 +59,14 @@ SimulatedAutonomousFlight/
 - `g++` with C++17 support
 - `make`
 - **SFML 3.x** library
-- **Python 3.x** with `pandas` and `matplotlib` (for analytics)
+- **Python 3.x** with `streamlit`, `pandas`, `numpy`, and `matplotlib`
 
 ```bash
-# 1. Build and Run Simulation
-make
-make run
+# Install Python dependencies
+py -m pip install streamlit pandas numpy matplotlib
 
-# 2. Analyze Latest Results
-python telemetry/data_analysis.py
+# Build C++ project and automatically launch the Dashboard & Simulation
+make run
 ```
 
 ---
@@ -96,19 +77,28 @@ python telemetry/data_analysis.py
 |---|---|---|
 | 1 – Base | URM, vehicle struct, simulation loop | ✅ Done |
 | 2 – Physics | Acceleration, forces, Euler integrator, Friction/Drag | ✅ Done |
-| 3 – Environment | World bounds, collision detection, Stability Fixes | ✅ Done |
-| 4 – Control | PID controller, point navigation, **Thrust system**, Autonomous Flight | ✅ Done |
-| 5 – AI | Pathfinding (A*), obstacle avoidance | 🔜 Next |
+| 3 – Environment | World bounds, collision detection | ✅ Done |
+| 4 – Control | PID controller, navigation, Thrust system | ✅ Done |
+| 5 – AI | State Machine (Battery management, behavior states) | ✅ Done |
 | 6 – Visualization | Multi-Body SFML Renderer | ✅ Done |
-| 7 – Analytics | **Telemetry logs, Python analysis suite** | ✅ Done |
+| 7 – Analytics | Real-Time Telemetry & Streamlit Dashboard | ✅ Done |
+
+### 🚀 Phase 8: AMD Virtual GPU Scaling Initiative (Upcoming)
+*The next massive step to demonstrate true compute capability.*
+
+| Milestone | Objective | Target |
+|---|---|---|
+| **Swarm Instancing** | Refactor `SFML` rendering from singular `Draw()` calls to `sf::VertexArray` Batch Rendering. | Render **10,000+** drones simultaneously without CPU bottleneck. |
+| **GPU Compute Shaders** | Implement GLSL Fragment Shaders (`sf::Shader`) to calculate dynamic environmental factors. | Offload interactive fluid dynamics (wind/gravity fields) entirely to the AMD GPU. |
+| **Telemetry Optimization** | Restructure disk I/O to handle massive swarm data without freezing the simulation. | Maintain 60 FPS while managing analytics for thousands of agents. |
 
 ---
 
 ## 🛠️ Technologies
 
 - **C++17** — Engine core and real-time computation.
-- **SFML 3.0** — Real-time window and graphics.
-- **Python 3 (Pandas/Matplotlib)** — Data post-processing and scientific plotting.
+- **SFML 3.0** — Real-time graphics and GPU shader interface.
+- **Python 3 (Streamlit/Pandas)** — Real-time interactive dashboard.
 - **Make** — Build automation.
 
 ---

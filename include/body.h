@@ -2,8 +2,9 @@
 #define BODY_H
 
 #include "utils/vector2.h"
-#include "vehicle/controller.h"
-#include "vehicle/control_config.h"
+#include "control/controller.h"
+#include "control/control_config.h"
+#include "AI/states.h"
 
 struct Body {
     // Physics
@@ -33,6 +34,13 @@ struct Body {
 
     Vector2 target = {0.0f, 0.0f};
     Controller controller;
+
+    // AI
+    DroneAction current_action = DroneAction::FLYING_TO_TARGET;
+    DroneState current_state = DroneState::LANDED;
+    Vector2 original_target = {0.0f, 0.0f}; // Para no olvidar su misión mientras carga
+    float battery = 100.0f;
+    float max_battery = 100.0f;
 };
 
 #endif

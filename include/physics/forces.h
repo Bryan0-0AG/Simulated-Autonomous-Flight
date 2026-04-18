@@ -2,7 +2,7 @@
 #define FORCES_H
 
 #include "utils/vector2.h"
-#include "vehicle/control_config.h"
+#include "control/control_config.h"
 #include "body.h"
 
 // Declaraciones

@@ -4,7 +4,7 @@
 #include "physics/forces.h"
 #include "utils/vector2.h"
 #include "utils/math_utils.h"
-#include "vehicle/control_config.h"
+#include "control/control_config.h"
 #include "body.h"
 
 

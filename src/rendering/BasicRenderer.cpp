@@ -5,6 +5,7 @@ BasicRenderer::BasicRenderer(Vector2 windowSize)
     : window(sf::VideoMode({(unsigned int)windowSize.x, (unsigned int)windowSize.y}), "Flight Simulation"),
       windowSize(windowSize)   // ← faltaba esto
 {
+    window.setFramerateLimit(60); // <-- ESTO ES CLAVE PARA QUE VAYA EN TIEMPO REAL
     shape.setRadius(10.f);
     shape.setFillColor(sf::Color::White);
 }

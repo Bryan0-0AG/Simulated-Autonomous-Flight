@@ -3,8 +3,8 @@
 #include "physics/physics_config.h"
 #include "physics/forces.h"
 // Control
-#include "vehicle/control_config.h"
-#include "vehicle/controller.h"
+#include "control/control_config.h"
+#include "control/controller.h"
 // Rendering
 #include "rendering/BasicRenderer.h"
 #include "environment/world.h"
@@ -16,6 +16,9 @@
 #include "utils/math_utils.h"
 #include <iostream>
 #include <vector>
+#include <string>
+// AI
+#include "AI/decisions.h"
 
 int main() {
     World world;
@@ -27,19 +30,17 @@ int main() {
     float accumulator    = 0.0f;
     float seconds_passed = 0.0f;
 
-    for(int i = 0; i < 50; i++) {    
+    for(int i = 0; i < 10; i++) {    
         Body body;
         body.mass     = 1.0f;
         body.position = {0.0f, 0.0f};
         body.size     = 10.0f;
-        body.color[0] = randint(50, 255); // R
-        body.color[1] = randint(50, 255); // G
-        body.color[2] = randint(50, 255); // B
         body.id       = i;
         body.target   = {
-            static_cast<float>(randint(40, 700)),
-            static_cast<float>(randint(40, 500))
+            static_cast<float>(randint(200, 700)),
+            static_cast<float>(randint(100, 500))
         };
+        body.original_target = body.target;
         body.controller = Controller();
         bodies.push_back(body);
     }
@@ -47,7 +48,7 @@ int main() {
     while (renderer.isOpen()) {
         renderer.handleEvents();
 
-        // Control -> Física
+        // Control -> Physics
         for(auto& body : bodies) {  
             ActuatorOutput control_output = body.controller.update(body, DT);
             Vector2 thrust_force = compute_thrust(control_output);         
@@ -60,24 +61,39 @@ int main() {
         // Render
         renderer.clear();
         for(auto& body : bodies) {
+            // Color de batería: Verde (100%) a Rojo (0%)
+            float battery_pct = body.battery / body.max_battery;
+            if (battery_pct < 0.0f) battery_pct = 0.0f;
+            if (battery_pct > 1.0f) battery_pct = 1.0f;
+            
+            body.color[0] = static_cast<int>(255.0f * (1.0f - battery_pct)); // R
+            body.color[1] = static_cast<int>(255.0f * battery_pct);          // G
+            body.color[2] = 0;                                               // B
+
             renderer.updateBody(body);
         }
         renderer.display();
 
-        // Log por segundo
-        accumulator += DT;
-        if (accumulator >= 1.0f) {
+        // Logic per second
+        accumulator += DT;        
+        if(accumulator >= 1.0f) {
+            accumulator -= 1.0f;
             std::cout << "\n" << std::string(100, '-') << "\n" << std::endl;
             std::cout << "Second " << seconds_passed << "\n" << std::endl;
+
+            // Telemetry
             for(auto& body : bodies) {
                 // Console
                 std::cout << " Body " << body.id
                         << "\n\t | pos: " << body.position.x << ", " << body.position.y
                         << "\n\t | vel: " << body.velocity.x << ", " << body.velocity.y
                         << "\n\t | target: " << body.target.x << ", " << body.target.y
+                        << "\n\t | action: " << toString(body.current_action)
+                        << "\n\t | state: " << toString(body.current_state)
+                        << "\n\t | battery: " << body.battery << "/" << body.max_battery
                         << std::endl;
 
-                // Telemetry
+                // Log
                 logger.log(
                     seconds_passed,
                     body.id,
@@ -92,12 +108,22 @@ int main() {
                     body.error_x,
                     body.error_y,
                     body.angle_pid,
-                    body.thrust_pid
+                    body.thrust_pid,
+                    toString(body.current_action),
+                    toString(body.current_state),
+                    body.battery,
+                    body.max_battery,
+                    body.original_target.x,
+                    body.original_target.y
                 );
             }
 
+            // AI
+            for(auto& body : bodies) {                
+                update_ai_decisions(body, world);
+            }
+
             // Update time
-            accumulator    -= 1.0f;  // ← restar, no resetear a 0 (más preciso)
             seconds_passed += 1.0f;  
         }        
     }

@@ -1,7 +1,7 @@
 #include <iostream>
 #include <cmath>
 #include "physics/physics_config.h"
-#include "vehicle/control_config.h"
+#include "control/control_config.h"
 #include "utils/vector2.h"
 #include "body.h"
 

@@ -23,3 +23,11 @@ int randint(int min, int max) {
     std::uniform_int_distribution<int> dist(min, max);
     return dist(gen);
 }
+
+float distance(Vector2 p1, Vector2 p2) {
+    return std::sqrt(std::pow(p2.x - p1.x, 2) + std::pow(p2.y - p1.y, 2));
+}
+
+float magnitude(Vector2 v) {
+    return std::sqrt(std::pow(v.x, 2) + std::pow(v.y, 2));
+}

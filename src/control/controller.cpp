@@ -1,7 +1,7 @@
 #include <iostream>
 #include <algorithm>
-#include "vehicle/controller.h"
-#include "vehicle/control_config.h"
+#include "control/controller.h"
+#include "control/control_config.h"
 #include "physics/physics_config.h"
 #include "body.h"
 
