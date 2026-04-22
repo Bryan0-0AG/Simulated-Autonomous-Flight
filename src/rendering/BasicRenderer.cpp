@@ -1,8 +1,12 @@
 #include "rendering/BasicRenderer.h"
+#include "world/world.h"
+#include "global_config.h"
+#include <algorithm>
 
 // El constructor inicializa la ventana. No se puede llamar dentro de otra función como run().
 BasicRenderer::BasicRenderer(Vector2 windowSize)
     : window(sf::VideoMode({(unsigned int)windowSize.x, (unsigned int)windowSize.y}), "Flight Simulation"),
+      camera(windowSize),
       windowSize(windowSize)
 {
     window.setFramerateLimit(60); 
@@ -28,17 +32,28 @@ bool BasicRenderer::isOpen() const {
 
 void BasicRenderer::handleEvents() {
     while (const std::optional event = window.pollEvent()) {
-        if (event->is<sf::Event::Closed>())
+        if (event->is<sf::Event::Closed>()) {
             window.close();
+        }
+        
+        // Pasar el evento a la cámara para el control manual
+        camera.handleEvent(*event, window);
     }
 }
 
 void BasicRenderer::clear(float totalTime) {
     window.clear(sf::Color::Black);
     
-    // Actualizamos y dibujamos el fondo con el Shader
-    updateShader(totalTime);
+    // Fondo estático (UI/Shader)
+    window.setView(window.getDefaultView());
     window.draw(backgroundRect, &shader);
+
+    // Activar cámara para los drones y el mundo (desde el objeto cámara modular)
+    window.setView(camera.getView());
+}
+
+void BasicRenderer::updateCamera(const std::vector<Body>& bodies) {
+    camera.update(bodies);
 }
 
 void BasicRenderer::display() {
@@ -57,9 +72,13 @@ void BasicRenderer::updateBody(const Body& body) {
     
     shape.setFillColor(sf::Color(body.color[0], body.color[1], body.color[2]));
     
-    Vector2 worldPosition = {body.position.x, windowSize.y - body.position.y};
-    shape.setPosition({worldPosition.x, worldPosition.y});
+    // Invertimos Y para la forma individual
+    shape.setPosition({body.position.x, windowSize.y - body.position.y});
     window.draw(shape);
+}
+
+void BasicRenderer::drawWorld(const world& virtualWorld) {
+    virtualWorld.draw(window);
 }
 
 void BasicRenderer::drawSwarm(const std::vector<Body>& bodies) {

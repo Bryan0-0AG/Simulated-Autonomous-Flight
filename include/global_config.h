@@ -21,14 +21,14 @@ struct ActuatorOutput {
 // ==============================
 // WORLD & SIMULATION
 // ==============================
-const Vector2 WORLD_SIZE = {1280.0f, 720.0f};
+const Vector2 WINDOW_SIZE = {1280.0f, 720.0f};      // Tamaño físico
+const Vector2 WORLD_SIZE  = {100000.0f, 100000.0f}; // Espacio virtual
 const float DT = 0.016f;
 
 // ==============================
 // DRONE SPAWN
 // ==============================
-const int DRONE_COUNT = 1000;
-const int DRONE_BATCH_SIZE = 100;
+const int DRONE_COUNT = 5000;
 const int SPAWN_INTERVAL = 1;
 
 // Flocking (collision avoidance)
@@ -37,7 +37,7 @@ const float SEPARATION_FORCE = 5.0f; // Reducido drásticamente para evitar expl
 
 // Formation configuration
 const int GRID_ROWS_OFFSET = 8; // Offset de filas para elevar la formación
-const int GRID_COLS = 50;
+const int GRID_COLS = 250;
 
 // ==============================
 // PHYSICS

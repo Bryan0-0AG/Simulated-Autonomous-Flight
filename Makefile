@@ -6,8 +6,9 @@ SRC = \
       src/physics/motion.cpp \
       src/physics/forces.cpp \
       src/utils/math_utils.cpp \
-      src/environment/world.cpp \
+      src/world/world.cpp \
       src/rendering/BasicRenderer.cpp \
+      src/rendering/camera.cpp \
       src/control/pid.cpp \
       src/control/controller.cpp \
       src/AI/decisions.cpp \

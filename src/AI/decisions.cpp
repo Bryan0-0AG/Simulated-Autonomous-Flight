@@ -3,7 +3,7 @@
 #include "global_config.h"
 #include <cmath>
 
-void update_ai_decisions(Body& body, World& world) {
+void update_ai_decisions(Body& body, const world& virtualWorld) {
     // 1. STATES CONTROL
     switch (body.current_state) {
         case DroneState::FLYING:
@@ -37,7 +37,7 @@ void update_ai_decisions(Body& body, World& world) {
             
             // FASE 2: Si ya llegamos a casa en X, procedemos a aterrizar
             if (std::abs(body.position.x - body.target.x) < 5.0f) {
-                float realgroundY = world.groundY + body.size;
+                float realgroundY = body.size; // El suelo físico es Y=0
                 body.target.y = realgroundY;
                 
                 // Si ya estamos a nivel del suelo

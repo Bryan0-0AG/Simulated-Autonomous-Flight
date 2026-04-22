@@ -1,96 +1,38 @@
-# ✈️ Simulated Autonomous Flight — Advanced Swarm Engine
+# Simulated-Autonomous-Flight 🚀
+An advanced autonomous drone swarm simulator developed in C++ using SFML and GPU-accelerated rendering.
 
-> A high-performance C++ engine for autonomous drone swarm simulation. Optimized for **10,000+ agents** using **Spatial Partitioning**, **Grid Formation Navigation**, and **Real-Time Interactive Telemetry**.
-
----
-
-## 📋 Current Status
-
-**Massive Swarm Scaling & High-Fidelity Analytics Completed.** 
-The simulation is now capable of managing thousands of drones simultaneously. Key optimizations include an $O(N)$ Spatial Grid for neighbor detection and a deterministic Grid Formation system. Telemetry has been overhauled to a unified high-frequency stream analyzed by a premium Plotly-powered dashboard.
+## 🌟 Current Status
+- **Modular Architecture**: Fully decoupled `world` and `camera` systems for independent environment and viewport management.
+- **Efficient Rendering**: High-performance rendering using `VertexArrays` and custom Shaders to handle thousands of agents simultaneously.
+- **Cinematic Camera**: Intelligent auto-zoom system that keeps the entire swarm in focus, with full manual interactivity (Scroll to zoom, Right-click to pan).
+- **Virtual Environment**: Infinite world ground with a tech-inspired neon horizon and a standardized physical coordinate system.
 
 ---
 
-## ✨ Key Features
+## 🗺️ Roadmap: Scaling to Mega-Swarms (10k - 100k agents)
 
-- **🚀 Swarm Scaling (Spatial Partitioning)**: Implements a `SpatialGrid` system that reduces neighbor lookup complexity from $O(N^2)$ to $O(N)$, enabling real-time simulation of massive fleets.
-- **🏁 Grid Formation Navigation**: Automated aerial slot assignment using coordinate-based mapping (`getCenterByCoord`). Drones organize themselves into a perfect grid, eliminating spatial conflicts.
-- **📦 Synchronized Batch Spawning**: Controlled deployment system that instantiates drones in batches every second, ensuring physics stability during takeoff.
-- **🎮 Advanced PID Control**: Dual-axis PID controllers tuned for high-density environments, featuring "Hovering Intelligence" (compensating gravity $F_g = m \cdot g$).
-- **📊 Interactive Plotly Dashboard**: 
-  - **Force Analysis**: Real-time breakdown of Gravity vs. Thrust vs. Separation forces.
-  - **Dynamic Visuals**: Zoomable trajectories and error convergence plots using `plotly.graph_objects`.
-  - **KPI Tracking**: Automatic generation of `Summary_Stats.csv` for post-flight evaluation.
-- **🧠 Autonomous State Machine**: Managed battery life cycles with Return-to-Base (RTB) logic and charging protocols.
+### Phase 1: Dynamic Environment & Obstacles (Next Steps)
+- [ ] **Procedural Generation**: Automatic creation of buildings, towers, and obstacles based on `WORLD_SIZE`.
+- [ ] **Proximity Sensors**: Raycasting implementation for drones to sense the environment in real-time.
+- [ ] **Steering Behaviors**: Smooth obstacle avoidance logic to navigate complex structures without breaking formation.
 
----
+### Phase 2: Advanced Environmental Physics
+- [ ] **Dynamic Force Fields**: Global wind systems and local turbulence using Perlin noise.
+- [ ] **Downwash Effect**: Physics-based interaction where drones affect the stability of those flying directly beneath them.
+- [ ] **Energy Management 2.0**: Physical charging stations requiring drones to queue and land autonomously.
 
-## 📁 Project Structure
-
-```
-SimulatedAutonomousFlight/
-├── include/
-│   ├── utils/              # SpatialGrid, Vector math, and PID Utils
-│   ├── physics/            # Force accumulation and motion integration
-│   ├── control/            # PID Controller logic
-│   ├── AI/                 # Mission state machines
-│   ├── telemetry/          # Unified Full_Telemetry logger
-│   └── body.h              # Physical body state & actuator data
-├── src/
-│   ├── main.cpp            # Main loop & Batch Spawning logic
-│   ├── AI/                 # Autonomous decisions
-│   ├── physics/            # Physics Engine implementation
-│   └── control/            # PID and actuator response
-├── telemetry/
-│   ├── logs/               # Timestamped session archives
-│   ├── dashboard.py        # Streamlit + Plotly Interactive Web App
-│   └── run_sim.py          # Unified Python Orchestrator
-├── Makefile                # Multi-platform build system
-└── README.md
-```
+### Phase 3: Massive Optimization (The 100k Leap)
+- [ ] **GPU Compute Shaders**: Migrating physics logic (Euler/Verlet integration) from CPU to GPU.
+- [ ] **Spatial Partitioning (3D Grid)**: Optimizing `SpatialGrid` for millisecond neighbor searches among >50,000 agents.
+- [ ] **Instanced Rendering**: Minimizing draw calls to maintain 60 FPS with 100,000 active agents.
 
 ---
 
-## 🚀 Build and Run
+## 🛠️ Requirements
+- C++17 Compiler (g++ suggested)
+- SFML 3.0+
+- Python 3.x (for the telemetry dashboard)
 
-### Requirements
-- `g++` (C++17)
-- `make`
-- **SFML 3.x**
-- **Python 3.x** (`streamlit`, `plotly`, `pandas`, `numpy`)
-
-```bash
-# Install new visualization dependencies
-pip install streamlit plotly pandas numpy
-
-# Build and Launch the entire system (C++ Sim + Python Dashboard)
-python telemetry/run_sim.py
-```
-
----
-
-## 🗺️ Roadmap
-
-| Phase | Focus | Status |
-|---|---|---|
-| 1-7 | Core Physics, PID, AI, and Telemetry | ✅ Done |
-| 8 | **Massive Scaling**: Spatial Partitioning & $O(N)$ Optimization | ✅ Done |
-| 9 | **Grid Formation**: Deterministic slot assignment | ✅ Done |
-| 10 | **Interactive Analytics**: Plotly Integration & Force Breakdown | ✅ Done |
-| 11 | **GPU Acceleration**: Migrating render loop to `sf::VertexArray` | ⏳ In Progress |
-
----
-
-## 🛠️ Technologies
-
-- **C++17** — High-performance computation.
-- **SFML 3.0** — Graphics and Windowing.
-- **Streamlit & Plotly** — Premium telemetry dashboard.
-- **Python 3** — Data analysis and system orchestration.
-
----
-
-## 📄 License
-MIT — free to use and modify.
-
-> Developed by [Bryan0-0AG](https://github.com/Bryan0-0AG)
+## 🚀 Getting Started
+1. Compile: `make`
+2. Run simulation and dashboard: `make run`

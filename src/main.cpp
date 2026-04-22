@@ -5,7 +5,7 @@
 #include "control/controller.h"
 // Rendering
 #include "rendering/BasicRenderer.h"
-#include "environment/world.h"
+#include "world/world.h"
 #include "body.h"
 // Telemetry
 #include "telemetry/telemetry_logger.h"
@@ -21,10 +21,10 @@
 #include "AI/decisions.h"
 
 int main() {
-    World world;
-    BasicRenderer renderer(WORLD_SIZE);
+    world virtualWorld(WINDOW_SIZE);
+    BasicRenderer renderer(WINDOW_SIZE);
     TelemetryLogger logger;
-    SpatialGrid grid(WORLD_SIZE.x, WORLD_SIZE.y, SEPARATION_RADIUS); // Ancho, Alto, Tamaño de celda
+    SpatialGrid grid(WINDOW_SIZE.x, WINDOW_SIZE.y, SEPARATION_RADIUS); // Grilla fija en el área inicial
 
     std::vector<Body> bodies;
     bodies.reserve(DRONE_COUNT); // Esto asegura que el vector no se mueva de sitio
@@ -58,13 +58,17 @@ int main() {
             Vector2 thrust_force = compute_thrust(control_output);         
           
             // Física
-            body.grounded = check_ground_collision(body, world);
+            body.grounded = virtualWorld.resolveGroundCollision(body);
             apply_forces(body, thrust_force, sepForce);
             update_motion(body, DT);                                                 
         }
 
+        // --- CÁMARA MODULAR ---
+        renderer.updateCamera(bodies);
+
         // --- RENDERIZADO OPTIMIZADO (GPU) ---
         renderer.clear(total_time);
+        renderer.drawWorld(virtualWorld);
         renderer.drawSwarm(bodies); // Dibujamos todos de un solo golpe
         renderer.display();
 
@@ -79,9 +83,8 @@ int main() {
             std::cout << "Real Second: " << seconds_passed << " | Drones: " << bodies.size() << std::endl;
 
             // SPAWN N DRONES EVERY SPAWN_INTERVAL SECONDS         
-            if ((int)seconds_passed % SPAWN_INTERVAL == 0 && bodies.size() < DRONE_COUNT) {             
-                int current_batch = DRONE_BATCH_SIZE;
-                float INITIAL_DRONE_SPACING = WORLD_SIZE.x / current_batch; 
+            if (static_cast<int>(seconds_passed) % SPAWN_INTERVAL == 0 && bodies.size() < DRONE_COUNT) {             
+                int current_batch = GRID_COLS;
                 
                 // Ensure we don't exceed the maximum
                 if (bodies.size() + current_batch > DRONE_COUNT) {
@@ -96,13 +99,19 @@ int main() {
                     body.size = 4.0f;
         
                     // Position drones evenly on the ground
-                    float x_pos = (i * INITIAL_DRONE_SPACING) + (INITIAL_DRONE_SPACING / 2.0f);
+                    float x_pos = i * (SEPARATION_RADIUS * 1.2f) + body.size;
                     body.position = {x_pos, body.size};
         
                     // --- TARGET EN FORMACIÓN (GRID NAVIGATION) ---
-                    // Cada dron tiene asignada una celda única basada en su ID
-                    int target_col = body.id % GRID_COLS;
-                    int target_row = (body.id / GRID_COLS) + GRID_ROWS_OFFSET; // Offset de 8 filas para elevar la formación
+                    // Los primeros drones (IDs bajos) van a las filas más altas
+                    int drones_per_row = GRID_COLS;
+                    int total_formation_rows = DRONE_COUNT / drones_per_row;
+                    
+                    int current_row_in_formation = body.id / drones_per_row;
+                    int target_col = body.id % drones_per_row;
+                    
+                    // Invertimos: (Total - Fila Actual) para que el ID 0 sea la fila más alta
+                    int target_row = (total_formation_rows - current_row_in_formation - 1) + GRID_ROWS_OFFSET;
                     
                     body.target = grid.getCellByCoord(target_col, target_row);
                     
@@ -117,7 +126,7 @@ int main() {
                                                                                                                                                                                                                                                                                                             
             // AI
             for(auto& body : bodies) {                
-                update_ai_decisions(body, world);
+                update_ai_decisions(body, virtualWorld);
             }
 
             // --- SELECTIVE TELEMETRY ---

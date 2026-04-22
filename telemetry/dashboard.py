@@ -86,20 +86,28 @@ if df is not None and not df.empty:
                 color_discrete_sequence=px.colors.sequential.Electric,
                 hole=.4
             )
-            st.plotly_chart(fig_forces, use_container_width=True)
+            st.plotly_chart(fig_forces, width='stretch')
             
         with c2:
             st.markdown("#### Perfil de Velocidad")
             fig_speed = px.line(df[df['id'] < 5], x="time", y="speed", color="id", 
                                title="Velocidad de los primeros 5 drones")
             fig_speed.update_layout(template="plotly_dark")
-            st.plotly_chart(fig_speed, use_container_width=True)
+            st.plotly_chart(fig_speed, width='stretch')
 
         st.markdown("#### Trayectorias Espaciales")
-        fig_traj = px.scatter(df[df['id'] < 15], x="pos_x", y="pos_y", color="id", size="speed",
-                             hover_data=['battery', 'state'], title="Movimiento en el Mundo 2D")
-        fig_traj.update_layout(template="plotly_dark")
-        st.plotly_chart(fig_traj, use_container_width=True)
+        # Usamos px.line para ver el "rastro" completo del vuelo
+        fig_traj = px.line(df[df['id'] < 15], x="pos_x", y="pos_y", color="id", 
+                           hover_data=['battery', 'state', 'time'], 
+                           title="Rastro de Vuelo (Drones 0-14)")
+        
+        fig_traj.update_layout(
+            template="plotly_dark",
+            yaxis=dict(scaleanchor="x", scaleratio=1), # Proporción 1:1 para que no se deforme el mundo
+            xaxis_title="X (px)",
+            yaxis_title="Y (px)"
+        )
+        st.plotly_chart(fig_traj, width='stretch')
 
     with tab2:
         st.subheader("Rendimiento del Controlador PID")
@@ -111,14 +119,14 @@ if df is not None and not df.empty:
             avg_err = df.groupby('time')['error_total'].mean()
             fig_error.add_trace(go.Scatter(x=avg_err.index, y=avg_err.values, name="Error Total Medio", line=dict(color='#00ffcc')))
             fig_error.update_layout(template="plotly_dark", xaxis_title="Tiempo (s)", yaxis_title="Error (px)")
-            st.plotly_chart(fig_error, use_container_width=True)
+            st.plotly_chart(fig_error, width='stretch')
             
         with c2:
             st.markdown("#### Respuesta del Actuador")
             fig_act = px.scatter(df[df['id'] == 0], x="time", y="thrust_val", color="angle_val",
                                 color_continuous_scale='Viridis', title="Thrust vs Angle (Dron 0)")
             fig_act.update_layout(template="plotly_dark")
-            st.plotly_chart(fig_act, use_container_width=True)
+            st.plotly_chart(fig_act, width='stretch')
 
     with tab3:
         st.subheader("Comportamiento y Autonomía")
@@ -130,7 +138,7 @@ if df is not None and not df.empty:
                              x="time", y="battery", title="Nivel de Batería Promedio")
             fig_bat.add_hline(y=20, line_dash="dash", line_color="red", annotation_text="RTB Threshold")
             fig_bat.update_layout(template="plotly_dark")
-            st.plotly_chart(fig_bat, use_container_width=True)
+            st.plotly_chart(fig_bat, width='stretch')
             
         with c2:
             st.markdown("#### Distribución de Estados (IA)")
@@ -138,11 +146,11 @@ if df is not None and not df.empty:
             state_counts.columns = ['Estado', 'Frecuencia']
             fig_state = px.bar(state_counts, x='Estado', y='Frecuencia', color='Estado')
             fig_state.update_layout(template="plotly_dark")
-            st.plotly_chart(fig_state, use_container_width=True)
+            st.plotly_chart(fig_state, width='stretch')
 
     with tab4:
         st.subheader("Explorador de Datos")
-        st.dataframe(df.tail(100), use_container_width=True)
+        st.dataframe(df.tail(100), width='stretch')
 
     # --- GUARDADO AUTOMÁTICO DE MÉTRICAS RESUMIDAS ---
     try:

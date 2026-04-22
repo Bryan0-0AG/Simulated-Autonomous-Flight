@@ -4,6 +4,10 @@
 #include <SFML/Graphics.hpp>
 #include "body.h"
 #include "utils/vector2.h"
+#include "rendering/camera.h"
+
+// Forward declaration
+class world;
 
 class BasicRenderer {
 public:
@@ -25,9 +29,15 @@ public:
     void run(const Body& body);
 
     void drawSwarm(const std::vector<Body>& bodies);
+    void drawWorld(const world& virtualWorld);
+
+    // Cámara
+    // Cámara inteligente modular
+    void updateCamera(const std::vector<Body>& bodies);
     
 private:
     sf::RenderWindow window;
+    camera camera;
     sf::CircleShape shape;
     Vector2 windowSize;
 
