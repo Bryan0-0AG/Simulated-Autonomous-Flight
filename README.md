@@ -1,37 +1,42 @@
 # Simulated-Autonomous-Flight 🚀
-An advanced autonomous drone swarm simulator developed in C++ using SFML and GPU-accelerated rendering.
+An advanced multi-agent autonomous drone swarm simulator. Built with C++, SFML, and powered by AMD ROCm for massive scale and LLM-driven strategic orchestration.
 
 ## 🌟 Current Status
-- **Modular Architecture**: Fully decoupled `world` and `camera` systems for independent environment and viewport management.
-- **Efficient Rendering**: High-performance rendering using `VertexArrays` and custom Shaders to handle thousands of agents simultaneously.
-- **Cinematic Camera**: Intelligent auto-zoom system that keeps the entire swarm in focus, with full manual interactivity (Scroll to zoom, Right-click to pan).
-- **Virtual Environment**: Infinite world ground with a tech-inspired neon horizon and a standardized physical coordinate system.
+- **Modular Architecture**: Decoupled `world`, `camera`, and `renderer` systems.
+- **High-Performance Rendering**: GPU-accelerated visualization via custom shaders.
+- **Cinematic Experience**: Intelligent auto-zoom and interactive camera controls.
+- **Physics Core**: Real-time PID control, battery management, and autonomous state machines.
 
 ---
 
-## 🗺️ Roadmap: Scaling to Mega-Swarms (10k - 100k agents)
+## 🗺️ Master Roadmap: The Path to 100k+ Agents
 
-### Phase 1: Dynamic Environment & Obstacles (Next Steps)
-- [ ] **Procedural Generation**: Automatic creation of buildings, towers, and obstacles based on `WORLD_SIZE`.
-- [ ] **Proximity Sensors**: Raycasting implementation for drones to sense the environment in real-time.
-- [ ] **Steering Behaviors**: Smooth obstacle avoidance logic to navigate complex structures without breaking formation.
+### Phase 1: Urban Logistics & Swarm Intelligence
+- [ ] **Procedural Environment**: Dynamic generation of city-scale obstacles and delivery packages.
+- [ ] **Logistics Logic**: Implementation of "Pick-and-Drop" systems for mass cargo transport missions.
+- [ ] **Proximity & Steering**: Raycasting-based obstacle avoidance and formation stability during high-speed transit.
 
-### Phase 2: Advanced Environmental Physics
-- [ ] **Dynamic Force Fields**: Global wind systems and local turbulence using Perlin noise.
-- [ ] **Downwash Effect**: Physics-based interaction where drones affect the stability of those flying directly beneath them.
-- [ ] **Energy Management 2.0**: Physical charging stations requiring drones to queue and land autonomously.
+### Phase 2: Agentic Commander (Brain-Body Integration)
+- [ ] **Python-C++ Bridge**: High-speed real-time communication via ZeroMQ for telemetry and command sync.
+- [ ] **LLM Strategic Orchestrator**: Integrating a Large Language Model (LLM) to analyze swarm telemetry and issue high-level tactical orders.
+- [ ] **Dynamic Environment Physics**: Global wind systems, turbulence, and downwash effects.
 
-### Phase 3: Massive Optimization (The 100k Leap)
-- [ ] **GPU Compute Shaders**: Migrating physics logic (Euler/Verlet integration) from CPU to GPU.
-- [ ] **Spatial Partitioning (3D Grid)**: Optimizing `SpatialGrid` for millisecond neighbor searches among >50,000 agents.
-- [ ] **Instanced Rendering**: Minimizing draw calls to maintain 60 FPS with 100,000 active agents.
+### Phase 3: AMD High-Performance Computing (HPC Leap)
+- [ ] **ROCm/HIP Integration**: Offloading core physics and swarm neighbor calculations to AMD Instinct GPU Kernels.
+- [ ] **GPU-Graphics Interop**: Zero-copy memory sharing between ROCm and SFML/OpenGL for maximum throughput.
+- [ ] **Mass Scale Optimization**: Reaching 100,000+ active agents at 60 FPS on AMD hardware.
+
+### Phase 4: Production-Ready Vision (Multimodal AI)
+- [ ] **Virtual Vision Sensors**: Simulated drone cameras feeding into Vision AI models for object detection and search-and-rescue tasks.
+- [ ] **Deployment at Scale**: Packaging the system for AMD Cloud infrastructure (MI300X) as a production-ready simulation tool.
 
 ---
 
 ## 🛠️ Requirements
 - C++17 Compiler (g++ suggested)
 - SFML 3.0+
-- Python 3.x (for the telemetry dashboard)
+- Python 3.x (Real-time dashboard and Agentic Bridge)
+- **AMD ROCm / HIP SDK** (For Phase 3/4)
 
 ## 🚀 Getting Started
 1. Compile: `make`
