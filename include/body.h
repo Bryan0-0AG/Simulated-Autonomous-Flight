@@ -3,7 +3,7 @@
 
 #include "utils/vector2.h"
 #include "control/controller.h"
-#include "control/control_config.h"
+#include "global_config.h"
 #include "AI/states.h"
 
 struct Body {
@@ -12,6 +12,12 @@ struct Body {
     Vector2 velocity = {0.0f, 0.0f};
     Vector2 force    = {0.0f, 0.0f};
     Vector2 acceleration = {0.0f, 0.0f};
+    
+    // Desglose de fuerzas para telemetría
+    Vector2 f_gravity    = {0.0f, 0.0f};
+    Vector2 f_thrust     = {0.0f, 0.0f};
+    Vector2 f_separation = {0.0f, 0.0f};
+    Vector2 f_drag       = {0.0f, 0.0f};
 
     float mass = 1.0f;
     bool grounded = false;

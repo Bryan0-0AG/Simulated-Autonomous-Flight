@@ -3,206 +3,168 @@ import pandas as pd
 import numpy as np
 import os
 import time
-import matplotlib.pyplot as plt
+import plotly.express as px
+import plotly.graph_objects as go
 
-st.set_page_config(page_title="Advanced Flight Simulation Dashboard", layout="wide")
+st.set_page_config(page_title="AMD Hackathon - Drone Swarm Telemetry", layout="wide")
 
-st.title("🚁 Advanced Flight Simulation Dashboard")
-st.markdown("Análisis en Tiempo Real de la Telemetría de los Drones.")
+# Estilos premium para una apariencia de hackathon
+st.markdown("""
+    <style>
+    .main { background-color: #0e1117; color: #c9d1d9; }
+    .stMetric { background-color: #161b22; border-radius: 10px; padding: 15px; border: 1px solid #30363d; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+    [data-testid="stSidebar"] { background-color: #0d1117; border-right: 1px solid #30363d; }
+    </style>
+    """, unsafe_allow_html=True)
+
+st.title("🚁 Swarm Intelligence Dashboard")
+st.markdown("---")
 
 LOG_DIR = "telemetry/logs"
 if not os.path.exists(LOG_DIR):
-    st.error(f"No log directory found at {LOG_DIR}")
+    os.makedirs(LOG_DIR, exist_ok=True)
+    st.info("Directorio de logs creado. Ejecuta la simulación para generar datos.")
     st.stop()
 
-dirs = [d for d in os.listdir(LOG_DIR) if os.path.isdir(os.path.join(LOG_DIR, d))]
+# Selección de Simulación
+dirs = sorted([d for d in os.listdir(LOG_DIR) if os.path.isdir(os.path.join(LOG_DIR, d))], reverse=True)
 if not dirs:
-    st.warning("No logs generated yet.")
+    st.warning("No se encontraron carpetas de logs. Inicia la simulación en C++.")
     st.stop()
 
-sorted_dirs = sorted(dirs, reverse=True)
-
-# Buscar "Actual Simulation" para que sea el valor por defecto si existe
-default_index = 0
-if "Actual Simulation" in sorted_dirs:
-    default_index = sorted_dirs.index("Actual Simulation")
-
-selected_run = st.sidebar.selectbox("Select Simulation Run", sorted_dirs, index=default_index)
-
-# Checkbox for real-time updates
-auto_refresh = st.sidebar.checkbox("Activar Actualización en Tiempo Real", value=True)
+selected_run = st.sidebar.selectbox("Seleccionar Sesión", dirs)
+auto_refresh = st.sidebar.checkbox("Actualización en Tiempo Real", value=True)
 
 run_path = os.path.join(LOG_DIR, selected_run)
+file_path = os.path.join(run_path, "Full_Telemetry.csv")
 
-def load_data(path, filename):
-    file_path = os.path.join(path, filename)
-    if os.path.exists(file_path):
+@st.cache_data(ttl=1)
+def load_full_data(path):
+    if os.path.exists(path):
         try:
-            return pd.read_csv(file_path)
+            df = pd.read_csv(path)
+            if df.empty: return None
+            # Cálculo de magnitudes para análisis cinemático
+            df['speed'] = np.sqrt(df['vel_x']**2 + df['vel_y']**2)
+            df['f_total_sep'] = np.sqrt(df['f_sep_x']**2 + df['f_sep_y']**2)
+            df['error_total'] = np.sqrt(df['error_x']**2 + df['error_y']**2)
+            return df
         except Exception:
             return None
     return None
 
-df_physics = load_data(run_path, "Physics.csv")
-df_control = load_data(run_path, "Control.csv")
-df_ai = load_data(run_path, "AI.csv")
+df = load_full_data(file_path)
 
-st.markdown("---")
-st.header("🌎 Análisis Físico y Cinemático")
-if df_physics is not None and not df_physics.empty:
-    st.markdown("### Métricas Generales")
-    col1, col2, col3, col4 = st.columns(4)
+if df is not None and not df.empty:
+    # --- MÉTRICAS DE CABECERA ---
+    last_time = df['time'].max()
+    num_drones = df['num_drones'].max()
     
-    # Calculations
-    df_physics['speed'] = np.sqrt(df_physics['vel_x']**2 + df_physics['vel_y']**2)
-    avg_speed = df_physics['speed'].mean()
-    max_speed = df_physics['speed'].max()
-    
-    # Approximate distance
-    df_physics['dx'] = df_physics.groupby('id')['pos_x'].diff().fillna(0)
-    df_physics['dy'] = df_physics.groupby('id')['pos_y'].diff().fillna(0)
-    df_physics['step_dist'] = np.sqrt(df_physics['dx']**2 + df_physics['dy']**2)
-    total_dist = df_physics.groupby('id')['step_dist'].sum().mean()
-    
-    col1.metric("Velocidad Promedio", f"{avg_speed:.2f} px/s")
-    col2.metric("Velocidad Máxima", f"{max_speed:.2f} px/s")
-    col3.metric("Distancia Promedio Recorrida", f"{total_dist:.2f} px")
-    col4.metric("Drones Activos", f"{df_physics['id'].nunique()}")
+    m_col1, m_col2, m_col3, m_col4 = st.columns(4)
+    with m_col1:
+        st.metric("Duración", f"{last_time:.1f} s")
+    with m_col2:
+        st.metric("Enjambre", f"{num_drones} drones")
+    with m_col3:
+        st.metric("V_Max", f"{df['speed'].max():.1f} px/s")
+    with m_col4:
+        st.metric("Batería Media", f"{df.groupby('id')['battery'].last().mean():.1f}%")
 
-    col_plot1, col_plot2 = st.columns(2)
-    with col_plot1:
-        st.subheader("Trayectorias en Tiempo Real")
-        fig, ax = plt.subplots()
-        for body_id in df_physics["id"].unique():
-            body = df_physics[df_physics["id"] == body_id]
-            ax.plot(body["pos_x"], body["pos_y"], label=f"Drone {body_id}")
-        ax.set_title("Trayectoria en el espacio")
-        ax.set_xlabel("Posición X")
-        ax.set_ylabel("Posición Y")
-        ax.grid(True, linestyle='--', alpha=0.6)
-        st.pyplot(fig)
-    
-    with col_plot2:
-        st.subheader("Perfil de Velocidades")
-        fig, ax = plt.subplots()
-        for body_id in df_physics["id"].unique():
-            body = df_physics[df_physics["id"] == body_id]
-            ax.plot(body["time"], body["speed"], alpha=0.5, label=f"Drone {body_id}")
-        ax.set_title("Magnitud de Velocidad vs Tiempo")
-        ax.set_xlabel("Tiempo (s)")
-        ax.set_ylabel("Velocidad (px/s)")
-        ax.grid(True, linestyle='--', alpha=0.6)
-        st.pyplot(fig)
-else:
-    st.warning("No hay datos de Física (Aún).")
+    st.markdown("### Centro de Análisis")
+    tab1, tab2, tab3, tab4 = st.tabs(["🚀 Física", "🎮 Control", "🧠 Inteligencia", "📊 Datos Crudos"])
 
-st.markdown("---")
-st.header("⚙️ Estabilidad y Control PID")
-if df_control is not None and not df_control.empty:
-    st.markdown("### Métricas de Precisión")
-    col1, col2, col3 = st.columns(3)
-    
-    rmse_x = np.sqrt((df_control['error_x']**2).mean())
-    rmse_y = np.sqrt((df_control['error_y']**2).mean())
-    avg_thrust = df_control['thrust'].mean()
-    
-    col1.metric("RMSE Error X", f"{rmse_x:.2f}")
-    col2.metric("RMSE Error Y", f"{rmse_y:.2f}")
-    col3.metric("Empuje Promedio (Thrust)", f"{avg_thrust:.2f}")
-    
-    col_plot1, col_plot2 = st.columns(2)
-    with col_plot1:
-        st.subheader("Evolución del Error")
-        fig, ax = plt.subplots()
-        mean_err_x = df_control.groupby('time')['error_x'].mean()
-        mean_err_y = df_control.groupby('time')['error_y'].mean()
-        ax.plot(mean_err_x.index, mean_err_x.values, label="Error Medio X", color='blue')
-        ax.plot(mean_err_y.index, mean_err_y.values, label="Error Medio Y", color='red')
-        ax.set_title("Error de Posición Promedio vs Tiempo")
-        ax.set_xlabel("Tiempo (s)")
-        ax.set_ylabel("Error (px)")
-        ax.legend()
-        ax.grid(True, linestyle='--', alpha=0.6)
-        st.pyplot(fig)
+    with tab1:
+        st.subheader("Dinámica y Fuerzas")
+        c1, c2 = st.columns(2)
         
-    with col_plot2:
-        st.subheader("Uso de Empuje (Thrust)")
-        fig, ax = plt.subplots()
-        mean_thrust = df_control.groupby('time')['thrust'].mean()
-        ax.plot(mean_thrust.index, mean_thrust.values, color='green')
-        ax.set_title("Empuje Promedio vs Tiempo")
-        ax.set_xlabel("Tiempo (s)")
-        ax.set_ylabel("Empuje")
-        ax.grid(True, linestyle='--', alpha=0.6)
-        st.pyplot(fig)
-else:
-    st.warning("No hay datos de Control (Aún).")
+        with c1:
+            st.markdown("#### Balance de Fuerzas (Eje Y)")
+            forces_y = df[['f_grav_y', 'f_thrust_y', 'f_sep_y', 'f_drag_y']].abs().mean()
+            fig_forces = px.pie(
+                values=forces_y.values, 
+                names=['Gravedad', 'Empuje (PID)', 'Separación', 'Arrastre Aire'],
+                color_discrete_sequence=px.colors.sequential.Electric,
+                hole=.4
+            )
+            st.plotly_chart(fig_forces, use_container_width=True)
+            
+        with c2:
+            st.markdown("#### Perfil de Velocidad")
+            fig_speed = px.line(df[df['id'] < 5], x="time", y="speed", color="id", 
+                               title="Velocidad de los primeros 5 drones")
+            fig_speed.update_layout(template="plotly_dark")
+            st.plotly_chart(fig_speed, use_container_width=True)
 
-st.markdown("---")
-st.header("🧠 Autonomía y Toma de Decisiones (IA)")
-if df_ai is not None and not df_ai.empty:
-    st.markdown("### Rendimiento y Misiones")
-    col1, col2, col3 = st.columns(3)
-    
-    state_counts = df_ai['state'].value_counts()
-    most_common_state = state_counts.idxmax() if not state_counts.empty else "N/A"
-    
-    df_ai['bat_drop'] = df_ai.groupby('id')['battery'].diff()
-    avg_drop = abs(df_ai[df_ai['bat_drop'] < 0]['bat_drop'].mean()) * 60 # por min
-    
-    col1.metric("Estado más común", most_common_state)
-    col2.metric("Consumo Batería", f"{avg_drop:.2f} / min" if pd.notna(avg_drop) else "N/A")
-    
-    col_plot1, col_plot2 = st.columns(2)
-    with col_plot1:
-        st.subheader("Nivel de Batería")
-        fig, ax = plt.subplots()
-        mean_bat = df_ai.groupby('time')['battery'].mean()
-        ax.plot(mean_bat.index, mean_bat.values, color='purple', linewidth=2)
-        ax.fill_between(mean_bat.index, mean_bat.values, color='purple', alpha=0.2)
-        ax.set_title("Descarga Promedio de la Flota")
-        ax.set_xlabel("Tiempo (s)")
-        ax.set_ylabel("Batería (%)")
-        ax.grid(True, linestyle='--', alpha=0.6)
-        st.pyplot(fig)
-        
-    with col_plot2:
-        st.subheader("Distribución de Estados")
-        st.bar_chart(state_counts)
-else:
-    st.warning("No hay datos de IA (Aún).")
+        st.markdown("#### Trayectorias Espaciales")
+        fig_traj = px.scatter(df[df['id'] < 15], x="pos_x", y="pos_y", color="id", size="speed",
+                             hover_data=['battery', 'state'], title="Movimiento en el Mundo 2D")
+        fig_traj.update_layout(template="plotly_dark")
+        st.plotly_chart(fig_traj, use_container_width=True)
 
-# Guardado automático de métricas a través del tiempo
-try:
-    if df_physics is not None and not df_physics.empty:
-        sim_time = float(df_physics['time'].max())
-        metrics = {
-            "Sim_Time": sim_time,
-            "Avg_Speed_px_s": round(avg_speed, 2) if 'avg_speed' in locals() else 0.0,
-            "Max_Speed_px_s": round(max_speed, 2) if 'max_speed' in locals() else 0.0,
-            "Avg_Dist_px": round(total_dist, 2) if 'total_dist' in locals() else 0.0,
-            "Active_Drones": int(df_physics['id'].nunique()),
-            "RMSE_X": round(rmse_x, 2) if 'rmse_x' in locals() else 0.0,
-            "RMSE_Y": round(rmse_y, 2) if 'rmse_y' in locals() else 0.0,
-            "Avg_Thrust": round(avg_thrust, 2) if 'avg_thrust' in locals() else 0.0,
-            "Most_Common_State": most_common_state if 'most_common_state' in locals() else "N/A",
-            "Battery_Drop_per_min": round(avg_drop, 2) if 'avg_drop' in locals() and pd.notna(avg_drop) else 0.0
-        }
+    with tab2:
+        st.subheader("Rendimiento del Controlador PID")
+        c1, c2 = st.columns(2)
         
-        metrics_df = pd.DataFrame([metrics])
+        with c1:
+            st.markdown("#### Error de Seguimiento")
+            fig_error = go.Figure()
+            avg_err = df.groupby('time')['error_total'].mean()
+            fig_error.add_trace(go.Scatter(x=avg_err.index, y=avg_err.values, name="Error Total Medio", line=dict(color='#00ffcc')))
+            fig_error.update_layout(template="plotly_dark", xaxis_title="Tiempo (s)", yaxis_title="Error (px)")
+            st.plotly_chart(fig_error, use_container_width=True)
+            
+        with c2:
+            st.markdown("#### Respuesta del Actuador")
+            fig_act = px.scatter(df[df['id'] == 0], x="time", y="thrust_val", color="angle_val",
+                                color_continuous_scale='Viridis', title="Thrust vs Angle (Dron 0)")
+            fig_act.update_layout(template="plotly_dark")
+            st.plotly_chart(fig_act, use_container_width=True)
+
+    with tab3:
+        st.subheader("Comportamiento y Autonomía")
+        c1, c2 = st.columns(2)
+        
+        with c1:
+            st.markdown("#### Salud de Batería")
+            fig_bat = px.line(df.groupby('time')['battery'].mean().reset_index(), 
+                             x="time", y="battery", title="Nivel de Batería Promedio")
+            fig_bat.add_hline(y=20, line_dash="dash", line_color="red", annotation_text="RTB Threshold")
+            fig_bat.update_layout(template="plotly_dark")
+            st.plotly_chart(fig_bat, use_container_width=True)
+            
+        with c2:
+            st.markdown("#### Distribución de Estados (IA)")
+            state_counts = df['state'].value_counts().reset_index()
+            state_counts.columns = ['Estado', 'Frecuencia']
+            fig_state = px.bar(state_counts, x='Estado', y='Frecuencia', color='Estado')
+            fig_state.update_layout(template="plotly_dark")
+            st.plotly_chart(fig_state, use_container_width=True)
+
+    with tab4:
+        st.subheader("Explorador de Datos")
+        st.dataframe(df.tail(100), use_container_width=True)
+
+    # --- GUARDADO AUTOMÁTICO DE MÉTRICAS RESUMIDAS ---
+    try:
         metrics_path = os.path.join(run_path, "Summary_Stats.csv")
-        
-        # Solo escribimos si el archivo no existe o si el tiempo de simulación ha avanzado
-        if not os.path.exists(metrics_path):
-            metrics_df.to_csv(metrics_path, index=False)
-        else:
-            existing_df = pd.read_csv(metrics_path)
-            if existing_df.empty or existing_df.iloc[-1]['Sim_Time'] != sim_time:
-                metrics_df.to_csv(metrics_path, mode='a', header=False, index=False)
-except Exception as e:
-    pass
+        summary_data = {
+            "Sim_Time": last_time,
+            "Total_Drones": df['id'].nunique(),
+            "Avg_Speed": df['speed'].mean(),
+            "Max_Speed": df['speed'].max(),
+            "Final_Avg_Battery": df.groupby('id')['battery'].last().mean(),
+            "Avg_Position_Error": df['error_total'].mean(),
+            "Avg_Thrust_Usage": df['thrust_val'].mean()
+        }
+        # Solo actualizamos el resumen si el tiempo ha avanzado significativamente
+        pd.DataFrame([summary_data]).to_csv(metrics_path, index=False)
+    except Exception:
+        pass
 
-# Auto-refresh logic
+else:
+    st.info("📊 Telemetría en espera... Inicia la simulación para visualizar datos.")
+
+# Mecanismo de auto-refresco
 if auto_refresh:
-    time.sleep(1)
+    time.sleep(2)
     st.rerun()

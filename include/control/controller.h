@@ -2,7 +2,7 @@
 #define CONTROLLER_H
 
 #include "control/pid.h"
-#include "control/control_config.h"
+#include "global_config.h"
 #include "utils/vector2.h"
 class Body;
 

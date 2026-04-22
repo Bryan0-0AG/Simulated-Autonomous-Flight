@@ -1,7 +1,7 @@
 #include <iostream>
 #include "environment/world.h"
 #include "utils/vector2.h"
-#include "physics/physics_config.h"
+#include "global_config.h"
 #include "body.h"
 
 bool check_ground_collision(Body& body, World& world) {    

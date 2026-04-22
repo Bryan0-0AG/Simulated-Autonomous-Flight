@@ -1,5 +1,6 @@
 #include "AI/decisions.h"
 #include "utils/math_utils.h"
+#include "global_config.h"
 #include <cmath>
 
 void update_ai_decisions(Body& body, World& world) {
@@ -7,7 +8,9 @@ void update_ai_decisions(Body& body, World& world) {
     switch (body.current_state) {
         case DroneState::FLYING:
             if(body.battery > 0.0f) {
-                body.battery -= static_cast<float>(randint(5, 10));
+                // Consumo mucho más suave basado en las constantes
+                float drain = BATTERY_DRAIN_MIN + (static_cast<float>(randint(0, 100)) / 100.0f) * (BATTERY_DRAIN_MAX - BATTERY_DRAIN_MIN);
+                body.battery -= drain;
             } else {
                 body.battery = 0.0f;
             }
@@ -18,7 +21,7 @@ void update_ai_decisions(Body& body, World& world) {
             break;
             
         case DroneState::LANDED:
-            body.battery += static_cast<float>(randint(1, 5));
+            body.battery += BATTERY_CHARGE_SPEED;
             if (body.battery >= body.max_battery) {
                 body.battery = body.max_battery;
                 body.current_action = DroneAction::FLYING_TO_TARGET;

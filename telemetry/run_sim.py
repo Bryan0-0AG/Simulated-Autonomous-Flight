@@ -2,57 +2,61 @@ import subprocess
 import sys
 import time
 import os
-import shutil
-import datetime
 
 def main():
     # Asegurarnos de que el script se ejecuta desde la raíz del proyecto
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     os.chdir(project_root)
 
-    log_dir = os.path.join("telemetry", "logs", "Actual Simulation")
+    print("\n" + "="*40)
+    print("🚀 AMD DRONE SWARM SIMULATOR CONTROL")
+    print("="*40 + "\n")
     
-    # 1. Preparar el directorio "Actual Simulation" limpiándolo si ya existe
-    if os.path.exists(log_dir):
-        shutil.rmtree(log_dir, ignore_errors=True)
-    os.makedirs(log_dir, exist_ok=True)
-    
-    # Crear archivos vacíos para que Streamlit no tire error al iniciar antes que C++
-    for f in ["Physics.csv", "Control.csv", "AI.csv", "All.csv"]:
-        open(os.path.join(log_dir, f), 'w').close()
+    # 1. Verificar si el ejecutable existe
+    app_executable = "app.exe" if sys.platform == "win32" else "./app"
+    if not os.path.exists(app_executable):
+        print(f"❌ Error: No se encontró el binario '{app_executable}'.")
+        print("👉 Por favor, compila el proyecto con 'make' antes de ejecutar este script.")
+        return
 
-    print("Iniciando el Dashboard...")
-    # Iniciar Streamlit en un proceso separado (abre el navegador web automáticamente)
-    streamlit_proc = subprocess.Popen([sys.executable, "-m", "streamlit", "run", "telemetry/dashboard.py"])
+    # 2. Iniciar el Dashboard (Streamlit)
+    print("📈 Iniciando Dashboard de Telemetría (Plotly)...")
+    try:
+        # Iniciamos Streamlit en un proceso separado
+        # -u para salida sin buffer para ver logs si es necesario
+        streamlit_proc = subprocess.Popen([sys.executable, "-m", "streamlit", "run", "telemetry/dashboard.py"])
+        print("✅ Dashboard en línea. Abre tu navegador en http://localhost:8501")
+    except Exception as e:
+        print(f"❌ Error al iniciar Streamlit: {e}")
+        return
     
-    # Darle un par de segundos para que levante el servidor web
+    # Pequeña pausa para que Streamlit se asiente
     time.sleep(3)
     
-    print("Iniciando Simulación...")
-    # Ejecutar la aplicación de C++
-    app_executable = "app.exe" if sys.platform == "win32" else "./app"
+    # 3. Ejecutar la Simulación de C++
+    print("🛸 Lanzando simulación de enjambre...")
+    print("👉 Cierra la ventana de la simulación para terminar la sesión.\n")
     try:
         app_proc = subprocess.Popen([app_executable])
-        # Esperar hasta que se cierre la ventana de la simulación
+        # Esperamos a que el usuario cierre la ventana de la simulación (SFML)
         app_proc.wait()
-    except FileNotFoundError:
-        print(f"Error: No se encontró el ejecutable {app_executable}. Compila el proyecto primero.")
-    
-    print("Simulación cerrada. Finalizando el Dashboard...")
-    # Matar el proceso de Streamlit
-    streamlit_proc.terminate()
-    streamlit_proc.wait()
-    
-    # 2. Renombrar el directorio a la fecha y hora de finalización
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    new_dir = os.path.join("telemetry", "logs", timestamp)
-    try:
-        os.rename(log_dir, new_dir)
-        print(f"Log guardado exitosamente como: {timestamp}")
     except Exception as e:
-        print(f"No se pudo renombrar el log final: {e}")
-        
-    print("Ejecución finalizada correctamente.")
+        print(f"❌ Error al ejecutar el motor de simulación: {e}")
+    
+    print("\n" + "-"*40)
+    print("✅ Simulación finalizada correctamente.")
+    print("📊 Los logs han sido guardados en la carpeta 'telemetry/logs/'.")
+    print("-"*40)
+    
+    try:
+        print("\n💡 El Dashboard sigue activo para que analices los últimos resultados.")
+        input("👉 Presiona ENTER para cerrar el Dashboard y salir del programa...")
+        streamlit_proc.terminate()
+        streamlit_proc.wait()
+    except (KeyboardInterrupt, EOFError):
+        streamlit_proc.terminate()
+    
+    print("\n👋 ¡Hasta la próxima misión!")
 
 if __name__ == "__main__":
     main()

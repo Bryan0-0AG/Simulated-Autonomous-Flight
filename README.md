@@ -1,28 +1,27 @@
-# ✈️ Simulated Autonomous Flight — Advanced Physics Engine
+# ✈️ Simulated Autonomous Flight — Advanced Swarm Engine
 
-> A high-performance C++ physics simulation engine designed for autonomous flight. Currently implements robust **Multi-Body Dynamics**, **PID Control**, **Basic AI State Machines**, and **Real-Time Python Dashboards**.
+> A high-performance C++ engine for autonomous drone swarm simulation. Optimized for **10,000+ agents** using **Spatial Partitioning**, **Grid Formation Navigation**, and **Real-Time Interactive Telemetry**.
 
 ---
 
 ## 📋 Current Status
 
-**Autonomous Fleet & Real-Time Analytics Completed.** The simulation features independent drones governed by individual PID controllers and an AI State Machine (managing battery and flight modes). Telemetry is streamed in real-time to an advanced Streamlit dashboard that calculates aggregated metrics (RMSE, Battery Drop, Velocities) while the C++ engine runs the physics.
+**Massive Swarm Scaling & High-Fidelity Analytics Completed.** 
+The simulation is now capable of managing thousands of drones simultaneously. Key optimizations include an $O(N)$ Spatial Grid for neighbor detection and a deterministic Grid Formation system. Telemetry has been overhauled to a unified high-frequency stream analyzed by a premium Plotly-powered dashboard.
 
 ---
 
 ## ✨ Key Features
 
-- **Autonomous PID Control**: Individual Proportional-Integral-Derivative (PID) controllers for precise navigation.
-- **AI State Machine**: Basic autonomy allowing drones to switch between states (e.g., `FLYING`, `CHARGING`) based on dynamic battery consumption.
-- **Multi-Body Dynamics**: Simultaneous simulation of multiple independent physical entities interacting with the environment.
-- **Advanced Telemetry System**: 
-  - Streams categorized data (`Physics.csv`, `Control.csv`, `AI.csv`) to a live "Actual Simulation" folder.
-  - Automatically archives logs with timestamps upon simulation closure.
-- **Real-Time Streamlit Dashboard**: 
-  - Python-based interactive analytics suite (`pandas`, `matplotlib`, `streamlit`).
-  - Auto-refreshing visualizers for Spatial Trajectories, Error Convergence (RMSE), Thrust profiles, and Battery lifecycles.
-- **Force-Based Physics**: Implements Newton's Second Law ($F=ma$) using Semi-Implicit Euler integration.
-- **Real-Time 2D Visualization**: Powered by **SFML**, featuring world-to-screen mapping.
+- **🚀 Swarm Scaling (Spatial Partitioning)**: Implements a `SpatialGrid` system that reduces neighbor lookup complexity from $O(N^2)$ to $O(N)$, enabling real-time simulation of massive fleets.
+- **🏁 Grid Formation Navigation**: Automated aerial slot assignment using coordinate-based mapping (`getCenterByCoord`). Drones organize themselves into a perfect grid, eliminating spatial conflicts.
+- **📦 Synchronized Batch Spawning**: Controlled deployment system that instantiates drones in batches every second, ensuring physics stability during takeoff.
+- **🎮 Advanced PID Control**: Dual-axis PID controllers tuned for high-density environments, featuring "Hovering Intelligence" (compensating gravity $F_g = m \cdot g$).
+- **📊 Interactive Plotly Dashboard**: 
+  - **Force Analysis**: Real-time breakdown of Gravity vs. Thrust vs. Separation forces.
+  - **Dynamic Visuals**: Zoomable trajectories and error convergence plots using `plotly.graph_objects`.
+  - **KPI Tracking**: Automatic generation of `Summary_Stats.csv` for post-flight evaluation.
+- **🧠 Autonomous State Machine**: Managed battery life cycles with Return-to-Base (RTB) logic and charging protocols.
 
 ---
 
@@ -31,23 +30,22 @@
 ```
 SimulatedAutonomousFlight/
 ├── include/
-│   ├── AI/                 # State machines and decision logic
-│   ├── physics/            # Motion and forces
+│   ├── utils/              # SpatialGrid, Vector math, and PID Utils
+│   ├── physics/            # Force accumulation and motion integration
 │   ├── control/            # PID Controller logic
-│   ├── environment/        # Collision headers
-│   ├── rendering/          # SFML Visualization class
-│   ├── telemetry/          # Logger system (Categorized I/O)
-│   └── body.h              # Physical body definitions
+│   ├── AI/                 # Mission state machines
+│   ├── telemetry/          # Unified Full_Telemetry logger
+│   └── body.h              # Physical body state & actuator data
 ├── src/
-│   ├── main.cpp            # Core loop
-│   ├── AI/                 # AI Implementation
-│   ├── physics/            # Physics Engine
-│   └── control/            # PID and actuators
+│   ├── main.cpp            # Main loop & Batch Spawning logic
+│   ├── AI/                 # Autonomous decisions
+│   ├── physics/            # Physics Engine implementation
+│   └── control/            # PID and actuator response
 ├── telemetry/
-│   ├── logs/               # Automated CSV simulation archives
-│   ├── dashboard.py        # Streamlit Real-Time Dashboard
-│   └── run_sim.py          # Python orchestrator for C++ & Web Server
-├── Makefile                # Build system (Auto-launches Python scripts)
+│   ├── logs/               # Timestamped session archives
+│   ├── dashboard.py        # Streamlit + Plotly Interactive Web App
+│   └── run_sim.py          # Unified Python Orchestrator
+├── Makefile                # Multi-platform build system
 └── README.md
 ```
 
@@ -56,17 +54,17 @@ SimulatedAutonomousFlight/
 ## 🚀 Build and Run
 
 ### Requirements
-- `g++` with C++17 support
+- `g++` (C++17)
 - `make`
-- **SFML 3.x** library
-- **Python 3.x** with `streamlit`, `pandas`, `numpy`, and `matplotlib`
+- **SFML 3.x**
+- **Python 3.x** (`streamlit`, `plotly`, `pandas`, `numpy`)
 
 ```bash
-# Install Python dependencies
-py -m pip install streamlit pandas numpy matplotlib
+# Install new visualization dependencies
+pip install streamlit plotly pandas numpy
 
-# Build C++ project and automatically launch the Dashboard & Simulation
-make run
+# Build and Launch the entire system (C++ Sim + Python Dashboard)
+python telemetry/run_sim.py
 ```
 
 ---
@@ -75,36 +73,24 @@ make run
 
 | Phase | Focus | Status |
 |---|---|---|
-| 1 – Base | URM, vehicle struct, simulation loop | ✅ Done |
-| 2 – Physics | Acceleration, forces, Euler integrator, Friction/Drag | ✅ Done |
-| 3 – Environment | World bounds, collision detection | ✅ Done |
-| 4 – Control | PID controller, navigation, Thrust system | ✅ Done |
-| 5 – AI | State Machine (Battery management, behavior states) | ✅ Done |
-| 6 – Visualization | Multi-Body SFML Renderer | ✅ Done |
-| 7 – Analytics | Real-Time Telemetry & Streamlit Dashboard | ✅ Done |
-
-### 🚀 Phase 8: AMD Virtual GPU Scaling Initiative (Upcoming)
-*The next massive step to demonstrate true compute capability.*
-
-| Milestone | Objective | Target |
-|---|---|---|
-| **Swarm Instancing** | Refactor `SFML` rendering from singular `Draw()` calls to `sf::VertexArray` Batch Rendering. | Render **10,000+** drones simultaneously without CPU bottleneck. |
-| **GPU Compute Shaders** | Implement GLSL Fragment Shaders (`sf::Shader`) to calculate dynamic environmental factors. | Offload interactive fluid dynamics (wind/gravity fields) entirely to the AMD GPU. |
-| **Telemetry Optimization** | Restructure disk I/O to handle massive swarm data without freezing the simulation. | Maintain 60 FPS while managing analytics for thousands of agents. |
+| 1-7 | Core Physics, PID, AI, and Telemetry | ✅ Done |
+| 8 | **Massive Scaling**: Spatial Partitioning & $O(N)$ Optimization | ✅ Done |
+| 9 | **Grid Formation**: Deterministic slot assignment | ✅ Done |
+| 10 | **Interactive Analytics**: Plotly Integration & Force Breakdown | ✅ Done |
+| 11 | **GPU Acceleration**: Migrating render loop to `sf::VertexArray` | ⏳ In Progress |
 
 ---
 
 ## 🛠️ Technologies
 
-- **C++17** — Engine core and real-time computation.
-- **SFML 3.0** — Real-time graphics and GPU shader interface.
-- **Python 3 (Streamlit/Pandas)** — Real-time interactive dashboard.
-- **Make** — Build automation.
+- **C++17** — High-performance computation.
+- **SFML 3.0** — Graphics and Windowing.
+- **Streamlit & Plotly** — Premium telemetry dashboard.
+- **Python 3** — Data analysis and system orchestration.
 
 ---
 
 ## 📄 License
-
 MIT — free to use and modify.
 
 > Developed by [Bryan0-0AG](https://github.com/Bryan0-0AG)

@@ -1,8 +1,7 @@
 #include <iostream>
 #include <algorithm>
 #include "control/controller.h"
-#include "control/control_config.h"
-#include "physics/physics_config.h"
+#include "global_config.h"
 #include "body.h"
 
 Controller::Controller()

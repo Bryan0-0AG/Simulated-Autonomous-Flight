@@ -12,8 +12,11 @@ public:
     
     bool isOpen() const;
     void handleEvents();
-    void clear();
+    void clear(float totalTime);
     void display();
+    
+    // Método para actualizar parámetros del Shader
+    void updateShader(float totalTime);
     
     // Método para actualizar y dibujar un cuerpo específico
     void updateBody(const Body& body);
@@ -21,10 +24,16 @@ public:
     // Bucle para compatibilidad
     void run(const Body& body);
 
+    void drawSwarm(const std::vector<Body>& bodies);
+    
 private:
     sf::RenderWindow window;
     sf::CircleShape shape;
     Vector2 windowSize;
+
+    // Elementos para el Shader de la GPU
+    sf::Shader shader;
+    sf::RectangleShape backgroundRect;
 };
 
 #endif // BASIC_RENDERER_H

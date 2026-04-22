@@ -1,7 +1,7 @@
 #ifndef PID_H
 #define PID_H
 
-#include "control_config.h"
+#include "global_config.h"
 
 // PID con anti-windup: el integral se satura en ±max_integral
 // para evitar acumulación excesiva cuando el actuador está saturado
