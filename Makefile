@@ -12,9 +12,10 @@ SRC = \
       src/control/pid.cpp \
       src/control/controller.cpp \
       src/AI/decisions.cpp \
-      src/AI/states.cpp
+      src/AI/states.cpp \
+      src/network/bridge.cpp
       
-LIBS = -lsfml-graphics -lsfml-window -lsfml-system
+LIBS = -lsfml-graphics -lsfml-window -lsfml-system -lsfml-network
 OUT = app
 
 all:
@@ -24,4 +25,4 @@ clear:
 	rm -f $(OUT)
 
 run: all
-	py telemetry/run_sim.py
+	py ai_commander/brain.py

@@ -2,11 +2,11 @@
 #define GLOBAL_CONFIG_H
 
 #include "utils/vector2.h"
+#include <string>
 
 // ==============================
-// ESTRUCTURAS BÁSICAS
+// BASIC STRUCTURES
 // ==============================
-
 struct PIDOutput {
     float p;
     float i;
@@ -33,10 +33,10 @@ const int SPAWN_INTERVAL = 1;
 
 // Flocking (collision avoidance)
 const float SEPARATION_RADIUS = 25.0f;
-const float SEPARATION_FORCE = 5.0f; // Reducido drásticamente para evitar explosiones
+const float SEPARATION_FORCE = 5.0f; // Reduced drastically to avoid explosions
 
 // Formation configuration
-const int GRID_ROWS_OFFSET = 8; // Offset de filas para elevar la formación
+const int GRID_ROWS_OFFSET = 8; // Offset of rows to raise the formation
 const int GRID_COLS = 250;
 
 // ==============================
@@ -80,5 +80,11 @@ const float MAX_VELOCITY = 100.0f;
 const float BATTERY_DRAIN_MIN = 0.1f;
 const float BATTERY_DRAIN_MAX = 0.5f;
 const float BATTERY_CHARGE_SPEED = 2.0f;
+
+// ==============================
+// NETWORK
+// ==============================
+const std::string SERVER_IP = "127.0.0.1";
+const unsigned short SERVER_PORT = 9999;
 
 #endif // GLOBAL_CONFIG_H

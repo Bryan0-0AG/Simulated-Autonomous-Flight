@@ -19,27 +19,32 @@
 #include <string>
 // AI
 #include "AI/decisions.h"
+// Network
+#include "network/bridge.h"
 
 int main() {
     world virtualWorld(WINDOW_SIZE);
     BasicRenderer renderer(WINDOW_SIZE);
     TelemetryLogger logger;
-    SpatialGrid grid(WINDOW_SIZE.x, WINDOW_SIZE.y, SEPARATION_RADIUS); // Grilla fija en el área inicial
+    SpatialGrid grid(WINDOW_SIZE.x, WINDOW_SIZE.y, SEPARATION_RADIUS);
+    NetworkBridge bridge;
+    sf::Clock clock;
+
+    bridge.connect(SERVER_IP, SERVER_PORT);
 
     std::vector<Body> bodies;
     bodies.reserve(DRONE_COUNT); // Esto asegura que el vector no se mueva de sitio
 
     float accumulator    = 0.0f;
-    float seconds_passed = 0.0f;
-    float total_time     = 0.0f;
-
-
-    sf::Clock clock;
+    float seconds_passed    = 0.0f;
+    float total_time        = 0.0f;
+    float last_brain_update = 0.0f; // Rastrear el último envío a la IA
 
     while (renderer.isOpen()) {
-        renderer.handleEvents();
-        
         float frameTime = clock.restart().asSeconds();
+        total_time += frameTime;                
+
+        renderer.handleEvents();        
 
         // --- CONTROL ESPACIAL ---
         grid.clear();
@@ -63,26 +68,24 @@ int main() {
             update_motion(body, DT);                                                 
         }
 
-        // --- CÁMARA MODULAR ---
-        renderer.updateCamera(bodies);
-
         // --- RENDERIZADO OPTIMIZADO (GPU) ---
         renderer.clear(total_time);
         renderer.drawWorld(virtualWorld);
         renderer.drawSwarm(bodies); // Dibujamos todos de un solo golpe
         renderer.display();
 
-        total_time += frameTime;
+        // --- CÁMARA MODULAR ---
+        renderer.updateCamera(bodies);
 
         // Logic per second
         accumulator += frameTime;        
-        if(accumulator >= 1.0f) {
+        while (accumulator >= 1.0f) {
             accumulator -= 1.0f;
             seconds_passed++;
             std::cout << "\n" << std::string(100, '-') << "\n" << std::endl;
             std::cout << "Real Second: " << seconds_passed << " | Drones: " << bodies.size() << std::endl;
 
-            // SPAWN N DRONES EVERY SPAWN_INTERVAL SECONDS         
+            // --- BATCH INTERVAL SPAWNING ---
             if (static_cast<int>(seconds_passed) % SPAWN_INTERVAL == 0 && bodies.size() < DRONE_COUNT) {             
                 int current_batch = GRID_COLS;
                 
@@ -122,16 +125,53 @@ int main() {
                 }
                 std::cout << ">>> Despegando lote de " << current_batch << " drones. Total: " << bodies.size() << std::endl;
             }
-                                                                                                                                                
-                                                                                                                                                                                                                                                                                                            
+                 
+            // --- STATISTICS GENERATION ---
+            int critical_drones = 0;
+            int drones_in_mission = 0;
+
+            float total_battery = 0.0f;       
+            float total_speed = 0.0f;
+            float total_dist_to_target = 0.0f;            
+            for(const auto& b : bodies) {
+                total_battery += b.battery;
+                if(b.battery < 20.0f) critical_drones++;
+
+                float speed = std::sqrt(b.velocity.x * b.velocity.x + b.velocity.y * b.velocity.y);
+                total_speed += speed;
+
+                if(b.current_action == DroneAction::FLYING_TO_TARGET) {
+                    drones_in_mission++;
+                    float dx = b.target.x - b.position.x;
+                    float dy = b.target.y - b.position.y;
+                    total_dist_to_target += std::sqrt(dx*dx + dy*dy);
+                }
+            }
+
+            float avg_battery = (bodies.empty()) ? 0.0f : (total_battery / bodies.size());
+            float avg_speed   = (bodies.empty()) ? 0.0f : (total_speed / bodies.size());
+            float avg_dist    = (drones_in_mission == 0) ? 0.0f : (total_dist_to_target / drones_in_mission);
+
+            // --- ENVIAR ESTADÍSTICAS AL CEREBRO (PYTHON) ---
+            if (total_time - last_brain_update >= 10.0f) {                
+                bridge.sendSwarmStatus(
+                    bodies.size(), 
+                    critical_drones, 
+                    drones_in_mission, 
+                    avg_battery, 
+                    avg_speed, 
+                    avg_dist);
+                last_brain_update = total_time; // Reiniciar el cronómetro
+            }
+
             // AI
             for(auto& body : bodies) {                
                 update_ai_decisions(body, virtualWorld);
             }
 
-            // --- SELECTIVE TELEMETRY ---
-            for(auto& body : bodies) {
-                if (body.id == 0) { // Solo mostramos 1 dron en consola para no saturar la pantalla
+            // --- SELECTIVE TELEMETRY ---                       
+            for(auto& body : bodies) {                
+                if (body.id == 0) {
                     std::cout << " Body " << body.id
                             << "\n\t | pos: " << body.position.x << ", " << body.position.y
                             << "\n\t | vel: " << body.velocity.x << ", " << body.velocity.y
@@ -141,13 +181,11 @@ int main() {
                             << "\n\t | battery: " << body.battery << "/" << body.max_battery
                         << std::endl;
                 }
-                if (body.id < 9) { // Guardamos registros de los primeros 10 drones                                                                                                                                                                                                                                                                                                                                  // Log
+                
+                if (body.id < 9) {
                     logger.log(total_time, bodies.size(), body);
                 }
-            }
-
-            // Update time
-            seconds_passed += 1.0f;  
+            } 
         }        
     }
     return 0;

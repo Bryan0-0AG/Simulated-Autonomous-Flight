@@ -4,8 +4,8 @@
 #include <string>
 
 enum class DroneAction {
-    FLYING_TO_TARGET,  // Modo de vuelo normal hacia su objetivo
-    RETURNING_TO_BASE  // Volviendo a la base por batería baja (Y = 0.0f)
+    FLYING_TO_TARGET,  
+    RETURNING_TO_BASE  
 };
 
 enum class DroneState {
