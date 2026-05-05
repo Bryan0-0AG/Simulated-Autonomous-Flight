@@ -3,53 +3,47 @@
 #include "global_config.h"
 #include <cmath>
 
-void update_ai_decisions(Body& body, const world& virtualWorld) {
+void update_ai_decisions(DroneChassis& DroneChassis, const world& virtualWorld) {
     // 1. STATES CONTROL
-    switch (body.current_state) {
+    switch (DroneChassis.current_state) {
         case DroneState::FLYING:
-            if(body.battery > 0.0f) {
-                // Consumo mucho más suave basado en las constantes
-                float drain = BATTERY_DRAIN_MIN + (static_cast<float>(randint(0, 100)) / 100.0f) * (BATTERY_DRAIN_MAX - BATTERY_DRAIN_MIN);
-                body.battery -= drain;
-            } else {
-                body.battery = 0.0f;
+            // Si el dron toca el suelo (caída o aterrizaje), cambia a LANDED
+            if (DroneChassis.position.y <= 4.1f) {
+                DroneChassis.current_state = DroneState::LANDED;
+                DroneChassis.velocity = {0.0f, 0.0f};
             }
-            if (body.battery < 20.0f && body.current_action != DroneAction::RETURNING_TO_BASE) {
-                body.original_target = body.target;
-                body.current_action = DroneAction::RETURNING_TO_BASE;
+            // Batería baja -> Volver a casa
+            if (DroneChassis.battery < 20.0f && DroneChassis.current_action != DroneAction::RETURNING_TO_BASE) {
+                DroneChassis.original_target = DroneChassis.target;
+                DroneChassis.current_action = DroneAction::RETURNING_TO_BASE;
             }
             break;
             
         case DroneState::LANDED:
-            body.battery += BATTERY_CHARGE_SPEED;
-            if (body.battery >= body.max_battery) {
-                body.battery = body.max_battery;
-                body.current_action = DroneAction::FLYING_TO_TARGET;
+            DroneChassis.battery += BATTERY_CHARGE_SPEED;
+            if (DroneChassis.battery >= DroneChassis.max_battery) {
+                DroneChassis.battery = DroneChassis.max_battery;
+                DroneChassis.current_action = DroneAction::FLYING_TO_TARGET;
+                DroneChassis.current_state = DroneState::FLYING;
             }
             break;         
     }
-
+    
     // 2. ACTIONS CONTROL
-    switch (body.current_action) {
+    switch (DroneChassis.current_action) {
         case DroneAction::RETURNING_TO_BASE:
-            // FASE 1: Volver a casa (X=0) manteniendo la altura actual
-            body.target.x = 0.0f + body.size;
+            // Volver al punto de carga (X=4)
+            DroneChassis.target.x = 4.0f;
             
-            // FASE 2: Si ya llegamos a casa en X, procedemos a aterrizar
-            if (std::abs(body.position.x - body.target.x) < 5.0f) {
-                float realgroundY = body.size; // El suelo físico es Y=0
-                body.target.y = realgroundY;
-                
-                // Si ya estamos a nivel del suelo
-                if (body.position.y < realgroundY + 5.0f) {
-                    body.current_state = DroneState::LANDED;
-                }
+            // Si estamos cerca de la vertical de la base, bajar
+            if (std::abs(DroneChassis.position.x - DroneChassis.target.x) < 10.0f) {
+                DroneChassis.target.y = 4.0f;
             }
             break;
             
         case DroneAction::FLYING_TO_TARGET:
-            body.target = body.original_target;
-            body.current_state = DroneState::FLYING;
+            DroneChassis.target = DroneChassis.original_target;
+            DroneChassis.current_state = DroneState::FLYING;
             break;
     }
 }

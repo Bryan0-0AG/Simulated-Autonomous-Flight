@@ -3,7 +3,7 @@
 
 #include <SFML/Graphics.hpp>
 #include <vector>
-#include "body.h"
+#include "HPC/swarm_dynamics.h"
 #include "utils/vector2.h"
 
 class camera {
@@ -13,8 +13,8 @@ public:
     // Procesa eventos de mouse (scroll y drag)
     void handleEvent(const sf::Event& event, const sf::RenderWindow& window);
 
-    // Actualiza la cámara (mezcla auto-tracking con control manual)
-    void update(const std::vector<Body>& bodies);
+    // Actualiza la cÃƒÂ¡mara (mezcla auto-tracking con control manual)
+    void update(const std::vector<DroneChassis>& drones);
 
     const sf::View& getView() const { return view; }
 
@@ -34,7 +34,7 @@ private:
     bool isDragging = false;
     sf::Vector2i lastMousePos;
 
-    // Configuración
+    // ConfiguraciÃƒÂ³n
     float lerpFactor = 0.05f;
     float zoomLerpFactor = 0.02f;
     float margin = 1.15f;

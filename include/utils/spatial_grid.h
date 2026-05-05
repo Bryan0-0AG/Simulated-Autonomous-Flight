@@ -4,7 +4,7 @@
 #include <vector>
 #include <cmath>
 #include "utils/vector2.h"
-#include "body.h"
+#include "HPC/swarm_dynamics.h"
 
 class SpatialGrid {
 public:
@@ -21,20 +21,20 @@ public:
         }
     }
 
-    void addBody(Body* body) {
-        int col = static_cast<int>(body->position.x / CELL_SIZE);
-        int row = static_cast<int>(body->position.y / CELL_SIZE);
+    void addBody(DroneChassis* drone) {
+        int col = static_cast<int>(drone->position.x / CELL_SIZE);
+        int row = static_cast<int>(drone->position.y / CELL_SIZE);
 
         if (col >= 0 && col < COLS &&
             row >= 0 && row < ROWS) {
-            CELLS[row * COLS + col].push_back(body);
+            CELLS[row * COLS + col].push_back(drone);
         }
     }
 
-    std::vector<Body*> getNeighbors(const Body& body) {
-        std::vector<Body*> neighbors;
-        int actual_col = static_cast<int>(body.position.x / CELL_SIZE);
-        int actual_row = static_cast<int>(body.position.y / CELL_SIZE);
+    std::vector<DroneChassis*> getNeighbors(const DroneChassis& drone) {
+        std::vector<DroneChassis*> neighbors;
+        int actual_col = static_cast<int>(drone.position.x / CELL_SIZE);
+        int actual_row = static_cast<int>(drone.position.y / CELL_SIZE);
 
         /*      
            -1                  0                 1
@@ -61,7 +61,7 @@ public:
         int col = static_cast<int>(position.x / CELL_SIZE);
         int row = static_cast<int>(position.y / CELL_SIZE);
         
-        // El centro es (Columna * Tamaño + Mitad del Tamaño)
+        // El centro es (Columna * TamaÃ±o + Mitad del TamaÃ±o)
         return {
             (col * CELL_SIZE) + (CELL_SIZE / 2.0f),
             (row * CELL_SIZE) + (CELL_SIZE / 2.0f)
@@ -78,7 +78,7 @@ public:
 private:
     float WIDTH, HEIGHT, CELL_SIZE;
     int COLS, ROWS;
-    std::vector<std::vector<Body*>> CELLS;
+    std::vector<std::vector<DroneChassis*>> CELLS;
 };
 
 #endif

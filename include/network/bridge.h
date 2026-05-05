@@ -4,7 +4,7 @@
 #include <SFML/Network.hpp>
 #include <string>
 #include <vector>
-#include "body.h"
+#include "HPC/swarm_dynamics.h"
 
 class NetworkBridge {
 public:

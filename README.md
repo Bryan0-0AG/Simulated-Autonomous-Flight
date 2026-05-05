@@ -1,50 +1,52 @@
 # Simulated-Autonomous-Flight 🚀
-An advanced multi-agent autonomous drone swarm simulator. Built with C++, SFML, and powered by AMD ROCm for massive scale and LLM-driven strategic orchestration.
+An advanced multi-agent autonomous drone swarm simulator. Built with C++, SFML, and powered by **AMD ROCm/HIP** for massive scale and LLM-driven strategic orchestration.
+
+> [!IMPORTANT]
+> **Hackathon Update**: This repository is currently in active development for the AMD Developer Hackathon. We are focusing on massive scalability using GPU Computing and Heterogeneous High-Performance Computing (HPC).
 
 ## 🌟 Current Status
-- **Agentic Orchestration**: Integrated **Gemini 1.5 Flash** as a high-level strategic commander.
-- **Edge Intelligence Architecture**: High-speed C++ engine calculates O(N) statistical telemetry, sending "Smart Packets" to the Python Brain.
-- **Real-Time Visualization**: GPU-accelerated rendering and a live Streamlit dashboard for telemetry analysis.
-- **Scalable Physics**: Autonomous state machines (PID, Battery, Missions) managing 5,000+ active agents.
+- **AMD HPC Integration (Phase 3 Alpha)**: Core physics engine fully migrated to **AMD HIP Kernels**.
+- **Intelligent Heterogeneous Computing**: Automatic **CPU/GPU Fallback** system. The simulation detects available hardware at runtime and switches between HIP Kernels and high-performance CPU execution using the same mathematical logic (`__host__ __device__`).
+- **Unified Data Architecture**: Implementation of the `DroneChassis` high-performance structure, optimized for zero-copy memory alignment between host and device.
+- **Agentic Orchestration**: Integrated **Google Gemini 1.5 Flash** as the global strategic commander, processing swarm-wide telemetry in real-time.
+- **Real-Time Visualization**: GPU-accelerated batch rendering and a dynamic **Streamlit Dashboard** for deep-dive telemetry analysis.
 
 ---
 
 ## 🧠 Brain-Body Architecture
 The system uses a **Decoupled Orchestration** model:
-1. **The Body (C++ Engine)**: Handles physics, collision avoidance (Spatial Grid), and real-time flight control.
-2. **The Bridge (SFML Network)**: Low-latency TCP communication between C++ and Python.
-3. **The Brain (Python Orchestrator)**: Consolidates metrics and queries the LLM Strategist every 10s to issue tactical commands.
+1. **The Body (C++ / AMD HIP)**: Massive physics calculation, collision avoidance (Spatial Grid), and PID flight control.
+2. **The Bridge (SFML Network)**: High-speed TCP bridge for C++/Python interop.
+3. **The Brain (Python / Gemini)**: High-level reasoning, mission strategy, and tactical command issuance.
 
 ---
 
-## 🗺️ Master Roadmap: The Path to 100k+ Agents
+## 🗺️ Hackathon Roadmap
 
-### Phase 1: Urban Logistics & Swarm Intelligence (DONE ✅)
-- [x] **Modular Architecture**: Decoupled systems.
-- [x] **Formation Flight**: 2D Grid navigation and desync spawning.
+### Phase 1: Foundations (DONE ✅)
+- [x] Modular C++ engine and basic flight state machine.
+- [x] Spatial Grid for efficient neighbor detection.
 
 ### Phase 2: Agentic Commander (DONE ✅)
-- [x] **LLM Strategic Orchestrator**: Integration with Google Gemini for real-time mission analysis.
-- [x] **Statistical Telemetry**: Real-time calculation of battery status, mission progress, and swarm health.
-- [x] **Unified Launcher**: Single-command orchestration via `make run`.
+- [x] Integration with Gemini 1.5 for strategic autonomy.
+- [x] Professional telemetry dashboard (Streamlit + Plotly).
 
-### Phase 3: AMD High-Performance Computing (HPC Leap - NEXT 🚀)
-- [ ] **ROCm/HIP Integration**: Offloading core physics and swarm neighbor calculations to AMD Instinct GPU Kernels.
-- [ ] **GPU-Graphics Interop**: Zero-copy memory sharing between ROCm and SFML/OpenGL for maximum throughput.
-- [ ] **Mass Scale Optimization**: Reaching 100,000+ active agents at 60 FPS on AMD hardware.
-
-### Phase 4: Production-Ready Vision (Multimodal AI)
-- [ ] **Virtual Vision Sensors**: Simulated drone cameras feeding into Vision AI models.
-- [ ] **Deployment at Scale**: Packaging for AMD Cloud infrastructure (MI300X).
+### Phase 3: AMD HPC Leap (IN PROGRESS 🚀)
+- [x] **HIP Migration**: Porting core physics to `.hip` kernels.
+- [x] **Hardware Agnostic Logic**: Shared code for CPU and AMD GPUs.
+- [x] **Memory Pipeline Optimization**: Direct VRAM pointer management.
+- [ ] **GPU-Graphics Interop**: Zero-copy textures between ROCm and SFML.
+- [ ] **Massive Scaling**: Stress testing towards 100,000 agents.
 
 ---
 
 ## 🛠️ Requirements
-- C++17 Compiler (g++ suggested)
-- SFML 3.0+
-- Python 3.10+ (`google-generativeai`, `streamlit`)
+- C++17 / HIP Compiler (`hipcc` or `g++`)
+- **AMD ROCm 6.0+** (For GPU acceleration)
+- **SFML 3.0+**
+- **Python 3.10+** (`google-generativeai`, `streamlit`, `pandas`)
 
-## 🚀 Getting Started
-1. **Setup API Key**: Export `GEMINI_API_KEY` in your environment.
-2. **Compile**: `make`
-3. **Launch All Systems**: `make run` (Starts AI Brain, Dashboard, and Simulation).
+## 🚀 Quick Start
+1. **API Security**: Create a `.env` file in the root and add `GEMINI_API_KEY=your_key_here`.
+2. **Build**: Run `make` to compile the system.
+3. **Simulate**: `make run` launches the simulation, the AI brain, and the dashboard simultaneously.

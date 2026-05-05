@@ -1,12 +1,10 @@
 // Physics
-#include "physics/motion.h"
-#include "physics/forces.h"
-// Control
-#include "control/controller.h"
+#include "HPC/swarm_dynamics.h"
 // Rendering
 #include "rendering/BasicRenderer.h"
+#include "world/procedural_city.h"
 #include "world/world.h"
-#include "body.h"
+#include "HPC/swarm_dynamics.h"
 // Telemetry
 #include "telemetry/telemetry_logger.h"
 // Libraries / Utils
@@ -30,15 +28,21 @@ int main() {
     NetworkBridge bridge;
     sf::Clock clock;
 
+    ProceduralCity city(WORLD_SIZE.x, WORLD_SIZE.y);
+    city.generate(static_cast<unsigned int>(std::time(nullptr)));
+
     bridge.connect(SERVER_IP, SERVER_PORT);
 
-    std::vector<Body> bodies;
-    bodies.reserve(DRONE_COUNT); // Esto asegura que el vector no se mueva de sitio
+    std::vector<DroneChassis> drones;
+    drones.reserve(DRONE_COUNT); 
 
     float accumulator    = 0.0f;
     float seconds_passed    = 0.0f;
     float total_time        = 0.0f;
-    float last_brain_update = 0.0f; // Rastrear el último envío a la IA
+    float last_brain_update = 0.0f;
+
+    // --- BUFFER PARA GPU ---
+    std::vector<DroneChassis> gpu_data;
 
     while (renderer.isOpen()) {
         float frameTime = clock.restart().asSeconds();
@@ -46,36 +50,47 @@ int main() {
 
         renderer.handleEvents();        
 
-        // --- CONTROL ESPACIAL ---
+        // --- CONTROL ESPACIAL (Cálculo de Separación en CPU) ---
         grid.clear();
-        for(auto& body : bodies) {
-            grid.addBody(&body);
+        for(auto& drone : drones) {
+            grid.addBody(&drone);
         }
 
-        // --- FÍSICA E IA ---
-        for(auto& body : bodies) {  
-            // Control espacial
-            auto neighbors = grid.getNeighbors(body);
-            Vector2 sepForce = compute_separation(body, neighbors);            
-            
-            // Control PID
-            ActuatorOutput control_output = body.controller.update(body, DT);
-            Vector2 thrust_force = compute_thrust(control_output);         
-          
-            // Física
-            body.grounded = virtualWorld.resolveGroundCollision(body);
-            apply_forces(body, thrust_force, sepForce);
-            update_motion(body, DT);                                                 
+        for(auto& drone : drones) {
+            Vector2 sep_force = {0.0f, 0.0f};
+            auto neighbors = grid.getNeighbors(drone);
+            for(auto* neighbor : neighbors) {
+                if(drone.id == neighbor->id) continue;
+                
+                float dx = drone.position.x - neighbor->position.x;
+                float dy = drone.position.y - neighbor->position.y;
+                float distSq = dx*dx + dy*dy;
+                
+                if(distSq < SEPARATION_RADIUS * SEPARATION_RADIUS && distSq > 0.01f) {
+                    float dist = std::sqrt(distSq);
+                    // Fuerza inversamente proporcional a la distancia
+                    float strength = (SEPARATION_RADIUS - dist) / SEPARATION_RADIUS;
+                    sep_force.x += (dx / dist) * SEPARATION_FORCE * strength;
+                    sep_force.y += (dy / dist) * SEPARATION_FORCE * strength;
+                }
+            }
+            drone.f_separation = sep_force;
+        }
+
+        // --- GPU PHYSICS (AMD HIP) or CPU FALLBACK ---
+        if (!drones.empty()) {
+            launch_physics_kernel(drones.data(), drones.size(), DT);
         }
 
         // --- RENDERIZADO OPTIMIZADO (GPU) ---
         renderer.clear(total_time);
+        renderer.drawCity(city); // Dibujamos los edificios primero
         renderer.drawWorld(virtualWorld);
-        renderer.drawSwarm(bodies); // Dibujamos todos de un solo golpe
+        renderer.drawSwarm(drones); // Dibujamos todos de un solo golpe
         renderer.display();
 
-        // --- CÁMARA MODULAR ---
-        renderer.updateCamera(bodies);
+        // --- MODULAR CAMERA ---
+        renderer.updateCamera(drones);
 
         // Logic per second
         accumulator += frameTime;        
@@ -83,47 +98,47 @@ int main() {
             accumulator -= 1.0f;
             seconds_passed++;
             std::cout << "\n" << std::string(100, '-') << "\n" << std::endl;
-            std::cout << "Real Second: " << seconds_passed << " | Drones: " << bodies.size() << std::endl;
+            std::cout << "Second: " << seconds_passed << " | Drones: " << drones.size() << std::endl;
 
             // --- BATCH INTERVAL SPAWNING ---
-            if (static_cast<int>(seconds_passed) % SPAWN_INTERVAL == 0 && bodies.size() < DRONE_COUNT) {             
+            if (static_cast<int>(seconds_passed) % SPAWN_INTERVAL == 0 && drones.size() < DRONE_COUNT) {             
                 int current_batch = GRID_COLS;
                 
                 // Ensure we don't exceed the maximum
-                if (bodies.size() + current_batch > DRONE_COUNT) {
-                    current_batch = DRONE_COUNT - bodies.size();
+                if (drones.size() + current_batch > DRONE_COUNT) {
+                    current_batch = DRONE_COUNT - drones.size();
                 }
 
                 // Calculate horizontal gap to spread drones across the entire screen width                
                 for (int i = 0; i < current_batch; i++) {
-                    Body body;
-                    body.id = static_cast<int>(bodies.size()); 
-                    body.mass = 1.0f;
-                    body.size = 4.0f;
+                    // Inicialización limpia para evitar basura en la telemetría
+                    DroneChassis drone = {}; 
+                    drone.id = static_cast<int>(drones.size()); 
+                    drone.mass = 1.0f;
+                    drone.battery = 100.0f; // Iniciar con batería llena
+                    
+                    float size = 4.0f; 
         
                     // Position drones evenly on the ground
-                    float x_pos = i * (SEPARATION_RADIUS * 1.2f) + body.size;
-                    body.position = {x_pos, body.size};
+                    float x_pos = i * (SEPARATION_RADIUS * 1.5f) + 500.0f + size;
+                    drone.position = {x_pos, size};
         
-                    // --- TARGET EN FORMACIÓN (GRID NAVIGATION) ---
-                    // Los primeros drones (IDs bajos) van a las filas más altas
+                    // --- GRID NAVIGATION ---
                     int drones_per_row = GRID_COLS;
                     int total_formation_rows = DRONE_COUNT / drones_per_row;
                     
-                    int current_row_in_formation = body.id / drones_per_row;
-                    int target_col = body.id % drones_per_row;
+                    int current_row_in_formation = drone.id / drones_per_row;
+                    int target_col = drone.id % drones_per_row;
                     
-                    // Invertimos: (Total - Fila Actual) para que el ID 0 sea la fila más alta
                     int target_row = (total_formation_rows - current_row_in_formation - 1) + GRID_ROWS_OFFSET;
                     
-                    body.target = grid.getCellByCoord(target_col, target_row);
-                    
-                    body.original_target = body.target;
-                    body.controller = Controller();
+                    drone.target = grid.getCellByCoord(target_col, target_row);
+                    drone.original_target = drone.target;
+                    drone.current_state = DroneState::FLYING;
         
-                    bodies.push_back(body);
+                    drones.push_back(drone);
                 }
-                std::cout << ">>> Despegando lote de " << current_batch << " drones. Total: " << bodies.size() << std::endl;
+                std::cout << ">>> Launching batch of " << current_batch << " drones. Total: " << drones.size() << std::endl;
             }
                  
             // --- STATISTICS GENERATION ---
@@ -133,7 +148,7 @@ int main() {
             float total_battery = 0.0f;       
             float total_speed = 0.0f;
             float total_dist_to_target = 0.0f;            
-            for(const auto& b : bodies) {
+            for(const auto& b : drones) {
                 total_battery += b.battery;
                 if(b.battery < 20.0f) critical_drones++;
 
@@ -148,42 +163,43 @@ int main() {
                 }
             }
 
-            float avg_battery = (bodies.empty()) ? 0.0f : (total_battery / bodies.size());
-            float avg_speed   = (bodies.empty()) ? 0.0f : (total_speed / bodies.size());
+            float avg_battery = (drones.empty()) ? 0.0f : (total_battery / drones.size());
+            float avg_speed   = (drones.empty()) ? 0.0f : (total_speed / drones.size());
             float avg_dist    = (drones_in_mission == 0) ? 0.0f : (total_dist_to_target / drones_in_mission);
 
-            // --- ENVIAR ESTADÍSTICAS AL CEREBRO (PYTHON) ---
-            if (total_time - last_brain_update >= 10.0f) {                
+            // --- SEND STATISTICS TO BRAIN (PYTHON) ---
+            if (total_time - last_brain_update >= LLM_QUERY_INTERVAL) {                
                 bridge.sendSwarmStatus(
-                    bodies.size(), 
+                    drones.size(), 
                     critical_drones, 
                     drones_in_mission, 
                     avg_battery, 
                     avg_speed, 
                     avg_dist);
-                last_brain_update = total_time; // Reiniciar el cronómetro
+                last_brain_update = total_time;
             }
 
             // AI
-            for(auto& body : bodies) {                
-                update_ai_decisions(body, virtualWorld);
+            for(auto& drone : drones) {
+                virtualWorld.resolveGroundCollision(drone);
+                update_ai_decisions(drone, virtualWorld);
             }
 
             // --- SELECTIVE TELEMETRY ---                       
-            for(auto& body : bodies) {                
-                if (body.id == 0) {
-                    std::cout << " Body " << body.id
-                            << "\n\t | pos: " << body.position.x << ", " << body.position.y
-                            << "\n\t | vel: " << body.velocity.x << ", " << body.velocity.y
-                            << "\n\t | target: " << body.target.x << ", " << body.target.y
-                            << "\n\t | action: " << toString(body.current_action)
-                            << "\n\t | state: " << toString(body.current_state)
-                            << "\n\t | battery: " << body.battery << "/" << body.max_battery
+            for(auto& drone : drones) {                
+                if (drone.id == 0) {
+                    std::cout << " DroneChassis " << drone.id
+                            << "\n\t | pos: " << drone.position.x << ", " << drone.position.y
+                            << "\n\t | vel: " << drone.velocity.x << ", " << drone.velocity.y
+                            << "\n\t | target: " << drone.target.x << ", " << drone.target.y
+                            << "\n\t | action: " << toString(drone.current_action)
+                            << "\n\t | state: " << toString(drone.current_state)
+                            << "\n\t | battery: " << drone.battery << "/" << drone.max_battery
                         << std::endl;
                 }
                 
-                if (body.id < 9) {
-                    logger.log(total_time, bodies.size(), body);
+                if (drone.id < 9) {
+                    logger.log(total_time, drones.size(), drone);
                 }
             } 
         }        

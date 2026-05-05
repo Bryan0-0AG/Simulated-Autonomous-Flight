@@ -9,7 +9,8 @@
 #include <iomanip>
 
 #include "global_config.h"
-#include "body.h"
+#include "AI/states.h"
+#include "HPC/swarm_dynamics.h"
 
 class TelemetryLogger {
 private:
@@ -17,7 +18,7 @@ private:
 
 public:
     TelemetryLogger() {
-        // Crear carpeta con timestamp para cada simulación
+        // Crear carpeta con timestamp para cada simulaciÃƒÂ³n
         std::time_t t = std::time(nullptr);
         std::tm* now = std::localtime(&t);
         std::stringstream ss;
@@ -27,31 +28,25 @@ public:
 
         file_all.open(dir + "/Full_Telemetry.csv");
 
-        // Header extendido
+        // Header limpio de campos no calculados en la GPU
         file_all << "time,num_drones,id,pos_x,pos_y,vel_x,vel_y,"
                  << "target_x,target_y,thrust_val,angle_val,"
-                 << "error_x,error_y,angle_p,angle_i,angle_d,thrust_p,thrust_i,thrust_d,"
-                 << "f_grav_x,f_grav_y,f_thrust_x,f_thrust_y,f_sep_x,f_sep_y,f_drag_x,f_drag_y,"
+                 << "error_x,error_y,f_sep_x,f_sep_y,"
                  << "action,state,battery\n";
     }
 
-    void log(float time, int num_drones, const Body& b) {
+    void log(float time, int num_drones, const DroneChassis& d) {
         file_all << time << ","
                  << num_drones << ","
-                 << b.id << ","
-                 << b.position.x << "," << b.position.y << ","
-                 << b.velocity.x << "," << b.velocity.y << ","
-                 << b.target.x << "," << b.target.y << ","
-                 << b.actuator_output.thrust << "," << b.actuator_output.angle << ","
-                 << b.error_x << "," << b.error_y << ","
-                 << b.angle_pid.p << "," << b.angle_pid.i << "," << b.angle_pid.d << ","
-                 << b.thrust_pid.p << "," << b.thrust_pid.i << "," << b.thrust_pid.d << ","
-                 << b.f_gravity.x << "," << b.f_gravity.y << ","
-                 << b.f_thrust.x << "," << b.f_thrust.y << ","
-                 << b.f_separation.x << "," << b.f_separation.y << ","
-                 << b.f_drag.x << "," << b.f_drag.y << ","
-                 << (int)b.current_action << "," << (int)b.current_state << ","
-                 << b.battery << "\n";
+                 << d.id << ","
+                 << d.position.x << "," << d.position.y << ","
+                 << d.velocity.x << "," << d.velocity.y << ","
+                 << d.target.x << "," << d.target.y << ","
+                 << d.control_output.thrust << "," << d.control_output.angle << ","
+                 << d.error.x << "," << d.error.y << ","
+                 << d.f_separation.x << "," << d.f_separation.y << ","
+                 << toString(d.current_action) << "," << toString(d.current_state) << ","
+                 << d.battery << "\n";
 
         file_all.flush();
     }

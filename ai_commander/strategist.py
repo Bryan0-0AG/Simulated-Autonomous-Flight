@@ -4,8 +4,14 @@ import os
 
 class DroneStrategist:
     def __init__(self, api_key=None):
-        # Puedes pasar la clave o usar una variable de entorno
-        self.api_key = api_key or "AIzaSyBDOqyui2c431faH5msSrGxUUmhL8gydbg"
+        env_path = os.path.join(os.path.dirname(__file__), "..", ".env")
+        if os.path.exists(env_path):
+            with open(env_path, "r") as f:
+                for line in f:
+                    if "GEMINI_API_KEY=" in line:
+                        os.environ["GEMINI_API_KEY"] = line.strip().split("=", 1)[1]
+
+        self.api_key = api_key or os.getenv("GEMINI_API_KEY")
         if not self.api_key:
             print("[ADVERTENCIA] No se encontro GEMINI_API_KEY. El estratega operara en modo MOCK.")
             self.model = None

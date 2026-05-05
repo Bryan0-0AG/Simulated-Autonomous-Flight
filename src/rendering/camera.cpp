@@ -1,11 +1,13 @@
 #include "rendering/camera.h"
+#include "global_config.h"
+
 #include <algorithm>
 
 camera::camera(Vector2 windowSize) : windowSize(windowSize) {
     view.setSize({(float)windowSize.x, (float)windowSize.y});
     currentCenter = {windowSize.x / 2.f, windowSize.y / 2.f};
     currentHeight = (float)windowSize.y;
-    view.setCenter({currentCenter.x, windowSize.y - currentCenter.y});
+    view.setCenter({currentCenter.x, WORLD_SIZE.y - currentCenter.y});
 }
 
 void camera::handleEvent(const sf::Event& event, const sf::RenderWindow& window) {
@@ -35,12 +37,12 @@ void camera::handleEvent(const sf::Event& event, const sf::RenderWindow& window)
         if (isDragging) {
             sf::Vector2i currentMousePos = mouseMove->position;
             
-            // Convertimos la diferencia de píxeles a coordenadas del mundo
+            // Convertimos la diferencia de pÃƒÂ­xeles a coordenadas del mundo
             sf::Vector2f worldLast = window.mapPixelToCoords(lastMousePos, view);
             sf::Vector2f worldCurrent = window.mapPixelToCoords(currentMousePos, view);
             sf::Vector2f delta = worldLast - worldCurrent;
 
-            // Ajustamos el offset manual (compensando nuestra inversión de Y)
+            // Ajustamos el offset manual (compensando nuestra inversiÃƒÂ³n de Y)
             manualOffset.x += delta.x;
             manualOffset.y -= delta.y; 
 
@@ -49,15 +51,15 @@ void camera::handleEvent(const sf::Event& event, const sf::RenderWindow& window)
     }
 }
 
-void camera::update(const std::vector<Body>& bodies) {
-    if (bodies.empty()) return;
+void camera::update(const std::vector<DroneChassis>& drones) {
+    if (drones.empty()) return;
 
-    // 1. Calcular el Bounding Box (Límites) del enjambre
+    // 1. Calcular el Bounding Box (LÃƒÂ­mites) del enjambre
     Vector2 swarm_center = {0, 0};
-    float minX = bodies[0].position.x, maxX = bodies[0].position.x;
-    float minY = bodies[0].position.y, maxY = bodies[0].position.y;
+    float minX = drones[0].position.x, maxX = drones[0].position.x;
+    float minY = drones[0].position.y, maxY = drones[0].position.y;
 
-    for (const auto& b : bodies) {
+    for (const auto& b : drones) {
         swarm_center.x += b.position.x;
         swarm_center.y += b.position.y;
         if (b.position.x < minX) minX = b.position.x;
@@ -65,17 +67,17 @@ void camera::update(const std::vector<Body>& bodies) {
         if (b.position.y < minY) minY = b.position.y;
         if (b.position.y > maxY) maxY = b.position.y;
     }
-    swarm_center.x /= (float)bodies.size();
-    swarm_center.y /= (float)bodies.size();
+    swarm_center.x /= (float)drones.size();
+    swarm_center.y /= (float)drones.size();
 
     float swarmWidth = maxX - minX;
     float swarmHeight = maxY - minY;
 
-    // 2. Interpolación del Centro Auto-tracking
+    // 2. InterpolaciÃƒÂ³n del Centro Auto-tracking
     currentCenter.x += (swarm_center.x - currentCenter.x) * lerpFactor;
     currentCenter.y += (swarm_center.y - currentCenter.y) * lerpFactor;
 
-    // 3. Cálculo de Zoom Dinámico + Multiplicador Manual
+    // 3. CÃƒÂ¡lculo de Zoom DinÃƒÂ¡mico + Multiplicador Manual
     float reqH_V = swarmHeight * margin;
     float reqH_H = (swarmWidth * margin) / (windowSize.x / windowSize.y);
     float reqH_G = currentCenter.y * 2.05f; 
@@ -90,6 +92,31 @@ void camera::update(const std::vector<Body>& bodies) {
 
     view.setSize({currentWidth, currentHeight});
 
-    // 4. Posición Final (Auto-center + Manual Offset)
-    view.setCenter({currentCenter.x + manualOffset.x, windowSize.y - (currentCenter.y + manualOffset.y)});
+    // 4. PosiciÃƒÂ³n Final (Auto-center + Manual Offset)
+    sf::Vector2f targetCenter = {currentCenter.x + manualOffset.x, WORLD_SIZE.y - (currentCenter.y + manualOffset.y)};
+    
+    // 5. CLAMPING INTELIGENTE (LÃƒÂ­mites de cÃƒÂ¡mara)
+    float halfWidth = view.getSize().x / 2.0f;
+    float halfHeight = view.getSize().y / 2.0f;
+
+    // LÃƒÂ­mite lateral X (0 a WORLD_SIZE.x)
+    if (targetCenter.x - halfWidth < 0.0f) targetCenter.x = halfWidth;
+    if (targetCenter.x + halfWidth > WORLD_SIZE.x) targetCenter.x = WORLD_SIZE.x - halfWidth;
+
+    // LÃƒÂ­mite inferior Y (Permitir ver 1000px de suelo negro)
+    float groundBottom = WORLD_SIZE.y + 1000.0f;
+    if (targetCenter.y + halfHeight > groundBottom) {
+        targetCenter.y = groundBottom - halfHeight;
+    }
+
+    // LÃƒÂ­mite superior Y (Opcional: No subir al infinito si quieres)
+    if (targetCenter.y - halfHeight < 0.0f) targetCenter.y = halfHeight;
+
+    // Aplicar al View
+    view.setCenter(targetCenter);
+
+    // 6. SINCRONIZAR OFFSETS (Evita el bloqueo de la cÃƒÂ¡mara)
+    // Si la cÃƒÂ¡mara fue limitada, ajustamos el offset manual para que no se "acumule" error
+    manualOffset.x = targetCenter.x - currentCenter.x;
+    manualOffset.y = WORLD_SIZE.y - targetCenter.y - currentCenter.y;
 }

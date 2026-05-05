@@ -2,16 +2,17 @@
 #define BASIC_RENDERER_H
 
 #include <SFML/Graphics.hpp>
-#include "body.h"
+#include "HPC/swarm_dynamics.h"
 #include "utils/vector2.h"
 #include "rendering/camera.h"
 
 // Forward declaration
 class world;
+class ProceduralCity;
 
 class BasicRenderer {
 public:
-    // Sugerencia: pasar el tamaño en el constructor es más limpio
+    // Sugerencia: pasar el tamaÃƒÂ±o en el constructor es mÃƒÂ¡s limpio
     BasicRenderer(Vector2 windowSize = {800, 600});
     
     bool isOpen() const;
@@ -19,21 +20,23 @@ public:
     void clear(float totalTime);
     void display();
     
-    // Método para actualizar parámetros del Shader
+    void drawCity(const ProceduralCity& city);
+    
+    // MÃƒÂ©todo para actualizar parÃƒÂ¡metros del Shader
     void updateShader(float totalTime);
     
-    // Método para actualizar y dibujar un cuerpo específico
-    void updateBody(const Body& body);
+    // MÃƒÂ©todo para actualizar y dibujar un cuerpo especÃƒÂ­fico
+    void updateBody(const DroneChassis& DroneChassis);
     
     // Bucle para compatibilidad
-    void run(const Body& body);
+    void run(const DroneChassis& DroneChassis);
 
-    void drawSwarm(const std::vector<Body>& bodies);
+    void drawSwarm(const std::vector<DroneChassis>& drones);
     void drawWorld(const world& virtualWorld);
 
-    // Cámara
-    // Cámara inteligente modular
-    void updateCamera(const std::vector<Body>& bodies);
+    // CÃƒÂ¡mara
+    // CÃƒÂ¡mara inteligente modular
+    void updateCamera(const std::vector<DroneChassis>& drones);
     
 private:
     sf::RenderWindow window;

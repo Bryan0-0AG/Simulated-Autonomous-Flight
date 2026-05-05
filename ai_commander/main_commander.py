@@ -38,9 +38,16 @@ def main():
                         swarm_data = json.loads(data)
                         print(f"\n[DATOS] Recibidos datos de {swarm_data.get('total_drones')} drones.")
 
-                        # 4. Consultar al Estratega (LLM)
+                        # 4. Consultar al Estratega (con manejo de errores de cuota)
                         print("[IA] Consultando estrategia tactica...")
-                        strategy = brain.generate_strategy(swarm_data)
+                        try:
+                            strategy = brain.generate_strategy(swarm_data)
+                        except Exception as e:
+                            print(f"[ERROR] Al consultar al LLM: {e}")
+                            strategy = {
+                                "global_order": "Mantener protocolos estándar de vuelo. Monitoreo de sensores activado.",
+                                "analysis": "Error de cuota en API de IA. Usando protocolo de contingencia local."
+                            }
                         
                         print(f"[ORDEN] {strategy.get('global_order')}")
                         print(f"[ANALISIS] {strategy.get('analysis')}")
