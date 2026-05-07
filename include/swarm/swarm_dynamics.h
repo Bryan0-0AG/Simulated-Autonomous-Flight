@@ -4,7 +4,7 @@
 #include "../utils/vector2.h"
 #include "../AI/states.h"
 
-// 1. Estructuras compartidas entre CPU y GPU
+// 1. Shared structures between CPU and GPU
 struct PIDOutput {
     float p, i, d;
 };
@@ -15,13 +15,13 @@ struct ControlOutput {
 };
 
 struct DroneChassis {
-    // Física
+    // Physics
     Vector2 position = {0.0f, 0.0f};
     Vector2 velocity = {0.0f, 0.0f};
     Vector2 force    = {0.0f, 0.0f};
     Vector2 acceleration = {0.0f, 0.0f};
     
-    // Desglose de fuerzas para telemetría
+    // Breakdown of forces for telemetry
     Vector2 f_thrust     = {0.0f, 0.0f};
     Vector2 f_separation = {0.0f, 0.0f};
     Vector2 f_drag       = {0.0f, 0.0f};
@@ -37,21 +37,30 @@ struct DroneChassis {
     ControlOutput control_output;
     Vector2 computed_sep_force = {0.0f, 0.0f};
 
-    // AI
+    // AI & Grouping
     int id;
-    DroneAction current_action = DroneAction::FLYING_TO_TARGET;
-    DroneState current_state = DroneState::LANDED;
+    int group_id = -1; // -1 means no group
+    int group_row = 0;
+    int group_col = 0;
+
+    int current_action = 0; // Maps to DroneAction
+    int current_state = 0;  // Maps to DroneState
     Vector2 original_target = {0.0f, 0.0f};
     float battery = 100.0f;
     float max_battery = 100.0f;
 };
 
-// 2. Interfaz de la función de Host (el puente)
+// Structure for obstacles in GPU
+struct GPUObstacle {
+    float x, y, w, h;
+};
+
+// 2. Interface for Host function (the bridge)
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void launch_physics_kernel(DroneChassis* drones, int n, float dt);
+void launch_physics_kernel(DroneChassis* drones, int n, float dt, const GPUObstacle* obstacles, int num_obstacles);
 
 #ifdef __cplusplus
 }

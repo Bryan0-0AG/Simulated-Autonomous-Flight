@@ -1,4 +1,5 @@
 #include "world/procedural_city.h"
+#include "global_config.h"
 #include <cstdlib>
 #include <ctime>
 
@@ -9,28 +10,30 @@ void ProceduralCity::generate(unsigned int seed) {
     std::srand(seed);
     buildings.clear();
 
-    float currentX = 100.0f; // Empezamos un poco después del borde
-    while (currentX < worldWidth - 200.0f) {
+    float currentX = 100.0f; 
+    while (currentX < worldWidth - BUILDING_MAX_WIDTH) {
         
-        // 1. Decidir si hay un edificio o un espacio vacío (calle)
-        float gap = 20.0f + (std::rand() % 100); // Espacio entre edificios
+        float gap = 20.0f + (std::rand() % 100); 
         currentX += gap;
 
-        if (std::rand() % 100 < 80) { // 80% de probabilidad de edificio
-            float bWidth = 80.0f + (std::rand() % 200);
-            float bHeight = 150.0f + (std::rand() % 600); // Edificios de hasta 600m de altura
+        if (std::rand() % 100 < BUILDING_PROBABILITY) {
+            float bWidth = BUILDING_MIN_WIDTH + (std::rand() % static_cast<int>(BUILDING_MAX_WIDTH - BUILDING_MIN_WIDTH));
+            float bHeight = BUILDING_MIN_HEIGHT + (std::rand() % static_cast<int>(BUILDING_MAX_HEIGHT - BUILDING_MIN_HEIGHT)); 
             
             BuildingType type = BuildingType::OBSTACLE;
             int r = std::rand() % 100;
-            if (r < 10) type = BuildingType::CHARGER;
-            else if (r < 20) type = BuildingType::COLLECTION;
-
-            // Todos inician en Y = 0 (el suelo)
-            addBuilding(currentX, 0.0f, bWidth, bHeight, type);
             
+            if (buildings.empty()) {
+                type = BuildingType::SPAWN;
+            } else {
+                if (r < PROB_CHARGER) type = BuildingType::CHARGER;
+                else if (r < PROB_COLLECT) type = BuildingType::COLLECTION;
+                else if (r < PROB_SPAWN) type = BuildingType::SPAWN;
+            }
+
+            addBuilding(currentX, 0.0f, bWidth, bHeight, type);
             currentX += bWidth;
         } else {
-            // Un espacio vacío más grande (una plaza o calle ancha)
             currentX += 150.0f;
         }
     }

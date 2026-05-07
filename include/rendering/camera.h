@@ -3,17 +3,17 @@
 
 #include <SFML/Graphics.hpp>
 #include <vector>
-#include "HPC/swarm_dynamics.h"
+#include "swarm/swarm_dynamics.h"
 #include "utils/vector2.h"
 
 class camera {
 public:
     camera(Vector2 windowSize);
 
-    // Procesa eventos de mouse (scroll y drag)
+    // Processes mouse events (scroll and drag)
     void handleEvent(const sf::Event& event, const sf::RenderWindow& window);
 
-    // Actualiza la cÃƒÂ¡mara (mezcla auto-tracking con control manual)
+    // Updates camera (mixes auto-tracking with manual control)
     void update(const std::vector<DroneChassis>& drones);
 
     const sf::View& getView() const { return view; }
@@ -26,15 +26,15 @@ private:
     Vector2 currentCenter;
     float currentHeight;
 
-    // Control Manual
+    // Manual Control
     Vector2 manualOffset = {0, 0};
     float zoomMultiplier = 1.0f;
     
-    // Estado del Mouse para el Drag
+    // Mouse State for Drag
     bool isDragging = false;
     sf::Vector2i lastMousePos;
 
-    // ConfiguraciÃƒÂ³n
+    // Configuration
     float lerpFactor = 0.05f;
     float zoomLerpFactor = 0.02f;
     float margin = 1.15f;

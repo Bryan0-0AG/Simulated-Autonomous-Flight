@@ -4,7 +4,7 @@
 #include <vector>
 #include <cmath>
 #include "utils/vector2.h"
-#include "HPC/swarm_dynamics.h"
+#include "swarm/swarm_dynamics.h"
 
 class SpatialGrid {
 public:
@@ -61,7 +61,7 @@ public:
         int col = static_cast<int>(position.x / CELL_SIZE);
         int row = static_cast<int>(position.y / CELL_SIZE);
         
-        // El centro es (Columna * TamaÃ±o + Mitad del TamaÃ±o)
+        // The center is (Column * Size + Half Size)
         return {
             (col * CELL_SIZE) + (CELL_SIZE / 2.0f),
             (row * CELL_SIZE) + (CELL_SIZE / 2.0f)

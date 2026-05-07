@@ -2,7 +2,7 @@
 #include <math.h>
 #include "global_config.h"
 #include "utils/vector2.h"
-#include "HPC/swarm_dynamics.h"
+#include "swarm/swarm_dynamics.h"
 __host__ __device__ float sq(float base){
     return base * base;
 }
@@ -17,7 +17,7 @@ __host__ __device__ PIDOutput compute_PID(
 ) {
     PIDOutput out;
 
-    // Inicializamos constantes
+    // Initialize constants
     float KP, KI, KD, MAX_INTEGRAL;
     if (is_thrust) {
         KP = PID_KP_THRUST;
@@ -31,16 +31,16 @@ __host__ __device__ PIDOutput compute_PID(
         MAX_INTEGRAL = PID_MAX_I_ANGLE;
     }
     
-    // 1. Integral con Anti-Windup (Saturación)
+    // 1. Integral with Anti-Windup (Saturation)
     prev_integral += error * dt;
     if (prev_integral > MAX_INTEGRAL) prev_integral = MAX_INTEGRAL;
     if (prev_integral < -MAX_INTEGRAL) prev_integral = -MAX_INTEGRAL;
 
-    // 2. Derivativa
+    // 2. Derivative
     float derivative = (error - prev_error) / dt;
     prev_error = error;
 
-    // 3. Salida por componentes
+    // 3. Component output
     out.p = KP * error;
     out.i = KI * prev_integral;
     out.d = KD * derivative;
@@ -51,10 +51,10 @@ __host__ __device__ PIDOutput compute_PID(
 __host__ __device__ ControlOutput compute_control(DroneChassis& drone, float dt) {
     ControlOutput output;
 
-    // A. Calcular error actual usando aritmética de vectores
+    // A. Calculate current error using vector arithmetic
     drone.error = drone.target - drone.position;
 
-    // B. Ejecutar PID para ÁNGULO
+    // B. Execute PID for ANGLE
     PIDOutput angle_parts = compute_PID(
         dt,
         drone.error.x,
@@ -63,7 +63,7 @@ __host__ __device__ ControlOutput compute_control(DroneChassis& drone, float dt)
         false
     );
 
-    // C. Ejecutar PID para EMPUJE (Thrust)
+    // C. Execute PID for THRUST
     PIDOutput thrust_parts = compute_PID(
         dt,
         drone.error.y,
@@ -72,14 +72,14 @@ __host__ __device__ ControlOutput compute_control(DroneChassis& drone, float dt)
         true
     );
 
-    // D. Combinar resultados
+    // D. Combine results
     output.angle  = angle_parts.p + angle_parts.i + angle_parts.d;
 
     float weight = drone.mass * GRAVITY;
     float thrust_adjustment = thrust_parts.p + thrust_parts.i + thrust_parts.d;
     output.thrust = weight + thrust_adjustment;
 
-    // Límites de seguridad
+    // Safety limits
     if (output.angle > MAX_ANGLE) output.angle = MAX_ANGLE;
     if (output.angle < MIN_ANGLE) output.angle = MIN_ANGLE;
     if (output.thrust > MAX_THRUST) output.thrust = MAX_THRUST;
@@ -91,13 +91,13 @@ __host__ __device__ ControlOutput compute_control(DroneChassis& drone, float dt)
 __host__ __device__ Vector2 compute_forces(DroneChassis& drone, float dt) {
     Vector2 forces = {0.0f, 0.0f};
     
-    // 1. Gravedad (Tira hacia ABAJO: -Y en coordenadas cartesianas)
+    // 1. Gravity (Pulls DOWN: -Y in Cartesian coordinates)
     forces.y -= (drone.mass * GRAVITY);
     
-    // 2. Fricción
+    // 2. Air Friction
     forces += (drone.velocity * -AIR_FRICTION);
     
-    // 3. Control (PID) - Solo si tiene bateria
+    // 3. Control (PID) - Only if battery is available
     //if (drone.battery > 0.0f) {
         drone.control_output = compute_control(drone, dt);
         
@@ -110,34 +110,34 @@ __host__ __device__ Vector2 compute_forces(DroneChassis& drone, float dt) {
     //    drone.control_output.thrust = 0.0f;
     //}
     
-    // 4. Separación (Viene de la CPU) - Sigue activa para evitar colisiones en cadena al caer
+    // 4. Separation (From CPU) - Remains active to avoid chain collisions when falling
     forces += drone.f_separation;
 
     return forces;
 }
 
 __host__ __device__ void process_drone(DroneChassis& drone, float dt) {
-    // 1. Calcular todas las fuerzas combinadas
-    // Dentro de compute_forces, el dron solo generará Thrust si tiene batería
+    // 1. Calculate all combined forces
+    // Within compute_forces, the drone will only generate thrust if it has battery
     Vector2 total_force = compute_forces(drone, dt);
 
-    // 2. Integracion (Euler)
+    // 2. Integration (Euler)
     Vector2 acceleration = total_force / drone.mass;
     drone.velocity += (acceleration * dt);
 
-    // 3. Limite de Velocidad
+    // 3. Speed Limit
     float speedSq = sq(drone.velocity.x) + sq(drone.velocity.y);
     if (speedSq > sq(MAX_VELOCITY)) {
         float speed = sqrtf(speedSq);
         drone.velocity = (drone.velocity / speed) * MAX_VELOCITY;
     }
 
-    // 4. Actualizar Posicion
+    // 4. Update Position
     drone.position += (drone.velocity * dt); 
 
-    // 5. Consumo de Bateria (Solo si está volando o cayendo con batería)
+    // 5. Battery Consumption (Only if flying or falling with battery)
     if (drone.battery > 0.0f) {
-        // Solo consume si no está apoyado en el suelo o si está intentando despegar
+        // Only consumes if not resting on the ground or if trying to take off
         if (drone.position.y > 0.1f || drone.velocity.y > 0.1f) {
             drone.battery -= BATTERY_DRAIN * dt; 
             if (drone.battery < 0.0f) drone.battery = 0.0f;
@@ -157,8 +157,8 @@ __global__ void massiveCompute_DRONES(
     }
 }
 
-// 3. FUNCIÓN DE HOST
-extern "C" void launch_physics_kernel(DroneChassis* cpu_drones, int n, float dt) {
+// 3. HOST FUNCTION
+extern "C" void launch_physics_kernel(DroneChassis* cpu_drones, int n, float dt, const GPUObstacle* obstacles, int num_obstacles) {
     DroneChassis* gpu_drones;
     size_t size = n * sizeof(DroneChassis);
 
@@ -166,11 +166,11 @@ extern "C" void launch_physics_kernel(DroneChassis* cpu_drones, int n, float dt)
     if (err != hipSuccess) {
         static bool warned = false;
         if (!warned) {
-            printf("\n[FALLBACK CPU] Hardware ROCm AMD no detectado o sin memoria.\n");
-            printf("[FALLBACK CPU] Transfiriendo todos los calculos fisicos de los drones al procesador (i3) de forma transparente...\n\n");
+            printf("\n[FALLBACK CPU] Hardware ROCm AMD not detected or out of memory.\n");
+            printf("[FALLBACK CPU] Transferring all drone physical calculations to CPU transparently...\n\n");
             warned = true;
         }
-        // FALLBACK: Ejecutar la MISMA lógica del kernel en el host (CPU)
+        // FALLBACK: Execute the SAME kernel logic on the host (CPU)
         for(int i = 0; i < n; i++) {
             process_drone(cpu_drones[i], dt);
         }
@@ -188,7 +188,7 @@ extern "C" void launch_physics_kernel(DroneChassis* cpu_drones, int n, float dt)
 
     err = hipGetLastError();
     if (err != hipSuccess) {
-        printf("\n[ERROR CRITICO GPU] Fallo en Kernel: %s\n", hipGetErrorString(err));
+        printf("\n[CRITICAL GPU ERROR] Kernel Fail: %s\n", hipGetErrorString(err));
     }
 
     hipDeviceSynchronize();

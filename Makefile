@@ -5,49 +5,56 @@ CXX      = g++
 HIPCC    = hipcc
 OUT      = app
 
-# Rutas de AMD (ROCm 7.1)
+# AMD ROCm Paths (Windows)
 AMD_PATH = C:/Program Files/AMD/ROCm/7.1
 AMD_INC  = -I"$(AMD_PATH)/include"
 AMD_LIB  = -L"$(AMD_PATH)/lib" -lamdhip64
 
-# Flags y Librerías
+# Flags and Libraries
 CXXFLAGS = -Wall -std=c++17 -Iinclude -Isrc $(AMD_INC)
 HIPFLAGS = -g
 LIBS     = -lsfml-graphics -lsfml-window -lsfml-system -lsfml-network $(AMD_LIB)
 
 # ==========================================
-# BLOQUE 1: C++ / CPU (Archivos normales)
+# BLOCK 1: C++ / CPU (Source Files)
 # ==========================================
-#src/physics/motion.cpp \
-#src/physics/forces.cpp \
-#src/control/pid.cpp \
-#src/control/controller.cpp \
+SOURCES = src/main.cpp \
+          src/swarm/swarm_manager.cpp \
+          src/swarm/matrix_group.cpp \
+          src/SimulationEngine.cpp \
+          src/utils/math_utils.cpp \
+          src/world/world.cpp \
+          src/rendering/renderer.cpp \
+          src/rendering/camera.cpp \
+          src/AI/drone_ai.cpp \
+          src/AI/states.cpp \
+          src/AI/matrix_ai.cpp \
+          src/network/bridge.cpp \
+          src/world/procedural_city.cpp
 
-SRC = src/main.cpp \
-      src/utils/math_utils.cpp \
-      src/world/world.cpp \
-      src/rendering/BasicRenderer.cpp \
-      src/rendering/camera.cpp \
-      src/AI/decisions.cpp \
-      src/AI/states.cpp \
-      src/network/bridge.cpp \
-      src/world/procedural_city.cpp
-
 # ==========================================
-# BLOQUE 2: AMD / GPU (Kernels)
+# BLOCK 2: AMD / GPU (Kernels)
 # ==========================================
-HIP_SRC = src/HPC/swarm_dynamics.hip
+HIP_SRC = src/swarm/swarm_dynamics.hip
 HIP_OBJ = build/swarm_dynamics.o
 
+# Dependencies
+HEADERS = include/global_config.h \
+          include/swarm/swarm_dynamics.h \
+          include/swarm/swarm_manager.h \
+          include/AI/states.h \
+          include/AI/drone_ai.h \
+          include/AI/matrix_ai.h
+
 # ==========================================
-# REGLAS DE COMPILACIÓN
+# BUILD RULES
 # ==========================================
 all: build_dir $(HIP_OBJ)
-	@echo "[BUILD] Compilando sistema completo con g++..."
-	$(CXX) $(CXXFLAGS) $(SRC) $(HIP_OBJ) -o $(OUT) $(LIBS)
+	@echo "[BUILD] Compiling complete system with g++..."
+	$(CXX) $(CXXFLAGS) $(SOURCES) $(HIP_OBJ) -o $(OUT) $(LIBS)
 
-$(HIP_OBJ): $(HIP_SRC)
-	@echo "[AMD] Compilando Kernels de GPU..."
+$(HIP_OBJ): $(HIP_SRC) $(HEADERS)
+	@echo "[AMD] Compiling GPU Kernels..."
 	$(HIPCC) $(HIPFLAGS) -fno-exceptions -fno-rtti -c $(HIP_SRC) -o $(HIP_OBJ) -Iinclude
 
 build_dir:

@@ -1,12 +1,12 @@
 #include "world/world.h"
-#include "HPC/swarm_dynamics.h"
+#include "swarm/swarm_dynamics.h"
 #include "global_config.h"
 #include <cmath>
 
 world::world(Vector2 windowSize) {
     groundLevel = WORLD_SIZE.y;
 
-    // ConfiguraciÃƒÂ³n paramÃƒÂ©trica del suelo
+    // Parametric configuration of the ground
     float groundWidth = WORLD_SIZE.x;
     float groundHeight = 1000.0f;
 
@@ -14,7 +14,7 @@ world::world(Vector2 windowSize) {
     groundShape.setFillColor(sf::Color(30, 30, 30));
     groundShape.setPosition({0.0f, groundLevel});
 
-    // LÃƒÂ­nea de neÃƒÂ³n
+    // Neon line
     groundLine.setSize({groundWidth, 4.0f});
     groundLine.setFillColor(sf::Color(0, 255, 255));
     groundLine.setPosition({0.0f, groundLevel - 2.0f});
@@ -27,24 +27,24 @@ void world::draw(sf::RenderWindow& window) const {
 
 bool world::resolveGroundCollision(DroneChassis& drone) const {
     bool currently_grounded = false;
-    float realGroundY = 4.0f; // Y=0 es el nivel fÃƒÂ­sico del suelo
+    float realGroundY = 4.0f; // Y=0 is the physical ground level
 
-    // 1. Resolver penetraciÃƒÂ³n y rebote
+    // 1. Resolve penetration and bounce
     if (drone.position.y < realGroundY) {
         drone.position.y = realGroundY;
 
         if (drone.velocity.y < 0) {
-            // Umbral de contacto en reposo
+            // Threshold for resting contact
             if (std::abs(drone.velocity.y) < 0.2f) {
                 drone.velocity.y = 0.0f;
                 currently_grounded = true;
             } else {
                 drone.velocity.y = -drone.velocity.y * ENERGY_RESTITUTION;
-                currently_grounded = false; // ¡Estamos rebotando!
+                currently_grounded = false; // We are bouncing!
             }
         }
     } else if (std::abs(drone.position.y - realGroundY) <= COLLISION_EPSILON && std::abs(drone.velocity.y) < 0.01f) {
-        // Ya está en el nivel del suelo y quieto
+        // Already on the ground level and still
         currently_grounded = true;
     }
 

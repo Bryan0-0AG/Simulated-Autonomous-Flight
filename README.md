@@ -13,7 +13,14 @@ An advanced multi-agent autonomous drone swarm simulator. Built with C++, SFML, 
 
 ---
 
-## 🧠 Brain-Body Architecture
+## 🧠 Swarm Orchestration Engine
+The simulation now implements a **Hierarchical Swarm Logic**:
+- **Massive Deployment (5,000+ Agents)**: Time-sliced batch spawning across a procedural city, preventing frame-time spikes and ensuring a visual "logistics" effect.
+- **Matrix State Machine**: Autonomous groups (`MatrixGroup`) manage their own lifecycle through states: `TAKEOFF` → `STABILIZATION` → `MISSION_ACTIVE`.
+- **Memory-Safe Architecture**: Re-engineered telemetry system using **Persistent Drone IDs** instead of memory pointers, enabling stable performance even during massive vector reallocations.
+- **Procedural Urban Generation**: Configurable building distributions (Spawn, Charger, Collection, Obstacle) through a centralized `global_config.h`.
+
+## 🏗️ Brain-Body Architecture
 The system uses a **Decoupled Orchestration** model:
 1. **The Body (C++ / AMD HIP)**: Massive physics calculation, collision avoidance (Spatial Grid), and PID flight control.
 2. **The Bridge (SFML Network)**: High-speed TCP bridge for C++/Python interop.
@@ -33,8 +40,9 @@ The system uses a **Decoupled Orchestration** model:
 
 ### Phase 3: AMD HPC Leap (IN PROGRESS 🚀)
 - [x] **HIP Migration**: Porting core physics to `.hip` kernels.
-- [x] **Hardware Agnostic Logic**: Shared code for CPU and AMD GPUs.
-- [x] **Memory Pipeline Optimization**: Direct VRAM pointer management.
+- [x] **Swarm Orchestration**: Hierarchical AI for 5,000+ agents.
+- [x] **Dynamic Deployment**: Building-aware spawning system.
+- [x] **Memory Stability**: ID-based persistent telemetry.
 - [ ] **GPU-Graphics Interop**: Zero-copy textures between ROCm and SFML.
 - [ ] **Massive Scaling**: Stress testing towards 100,000 agents.
 

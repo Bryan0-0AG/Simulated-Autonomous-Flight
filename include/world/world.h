@@ -5,19 +5,19 @@
 #include <vector>
 #include "utils/vector2.h"
 
-// Clase world en minÃºsculas siguiendo la nueva convenciÃ³n
+// world class in lowercase following the new convention
 class world {
 public:
     world(Vector2 windowSize);
 
-    // Dibuja todos los elementos estÃ¡ticos del entorno
+    // Draws all static environment elements
     void draw(sf::RenderWindow& window) const;
 
-    // FÃ­sica de colisiones
+    // Collision physics
     bool resolveGroundCollision(class DroneChassis& drone) const;
 
 private:
-    float groundLevel; // Y=0 fÃ­sico en coordenadas de pantalla
+    float groundLevel; // physical Y=0 in screen coordinates
     sf::RectangleShape groundShape;
     sf::RectangleShape groundLine;
 };

@@ -10,7 +10,7 @@
 
 #include "global_config.h"
 #include "AI/states.h"
-#include "HPC/swarm_dynamics.h"
+#include "swarm/swarm_dynamics.h"
 
 class TelemetryLogger {
 private:
@@ -18,7 +18,7 @@ private:
 
 public:
     TelemetryLogger() {
-        // Crear carpeta con timestamp para cada simulaciÃƒÂ³n
+        // Create folder with timestamp for each simulation
         std::time_t t = std::time(nullptr);
         std::tm* now = std::localtime(&t);
         std::stringstream ss;
@@ -28,7 +28,7 @@ public:
 
         file_all.open(dir + "/Full_Telemetry.csv");
 
-        // Header limpio de campos no calculados en la GPU
+        // Header cleaned of fields not calculated on the GPU
         file_all << "time,num_drones,id,pos_x,pos_y,vel_x,vel_y,"
                  << "target_x,target_y,thrust_val,angle_val,"
                  << "error_x,error_y,f_sep_x,f_sep_y,"
@@ -45,7 +45,7 @@ public:
                  << d.control_output.thrust << "," << d.control_output.angle << ","
                  << d.error.x << "," << d.error.y << ","
                  << d.f_separation.x << "," << d.f_separation.y << ","
-                 << toString(d.current_action) << "," << toString(d.current_state) << ","
+                 << toString(static_cast<DroneAction>(d.current_action)) << "," << toString(static_cast<DroneState>(d.current_state)) << ","
                  << d.battery << "\n";
 
         file_all.flush();

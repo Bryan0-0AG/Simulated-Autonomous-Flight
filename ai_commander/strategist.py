@@ -1,4 +1,4 @@
-import google.generativeai as genai
+from google import genai
 import json
 import os
 
@@ -14,48 +14,53 @@ class DroneStrategist:
         self.api_key = api_key or os.getenv("GEMINI_API_KEY")
         if not self.api_key:
             print("[ADVERTENCIA] No se encontro GEMINI_API_KEY. El estratega operara en modo MOCK.")
-            self.model = None
+            self.client = None
         else:
-            genai.configure(api_key=self.api_key)
-            self.model = genai.GenerativeModel('gemini-3-flash-preview')
+            # New SDK: Client Initialization
+            self.client = genai.Client(api_key=self.api_key)
+            self.model_id = 'gemini-2.0-flash'
 
     def generate_strategy(self, swarm_status):
         """
-        Recibe un diccionario con el estado del enjambre y devuelve una estrategia en JSON.
+        Receives a dictionary with the swarm status and returns a strategy in JSON.
         """
         prompt = f"""
-        Eres el Comandante de un Enjambre de Drones Autónomos en una misión de logística urbana.
+        You are the Commander of a Swarm of Autonomous Drones on an urban logistics mission.
         
-        ESTADO ACTUAL DEL ENJAMBRE:
+        CURRENT SWARM STATUS:
         {json.dumps(swarm_status, indent=2)}
         
-        TAREA:
-        Analiza el estado y emite órdenes tácticas. 
-        Debes responder EXCLUSIVAMENTE en formato JSON con la siguiente estructura:
+        TASK:
+        Analyze the status and issue tactical orders. 
+        You must respond EXCLUSIVELY in JSON format with the following structure:
         {{
-            "analysis": "Breve explicación de la situación",
-            "global_order": "Instrucción general para el enjambre",
+            "analysis": "Brief explanation of the situation",
+            "global_order": "General instruction for the swarm",
             "priority_zones": [[x1, y1], [x2, y2]],
             "safety_level": "low/medium/high"
         }}
         """
 
-        if not self.model:
-            # Modo Mock por si no hay API Key todavía
+        if not self.client:
+            # Mock mode in case there is no API Key yet
             return {
-                "analysis": "Modo offline: Manteniendo formación estándar.",
-                "global_order": "MANTENER_POSICION",
+                "analysis": "Offline mode: Maintaining standard formation.",
+                "global_order": "MAINTAIN_POSITION",
                 "priority_zones": [],
                 "safety_level": "medium"
             }
 
         try:
-            response = self.model.generate_content(prompt)
-            # Limpiamos la respuesta por si el LLM añade markdown (```json ...)
+            # New SDK: models.generate_content call
+            response = self.client.models.generate_content(
+                model=self.model_id,
+                contents=prompt
+            )
+            # Clean the response in case the LLM adds markdown (```json ...)
             text = response.text.replace('```json', '').replace('```', '').strip()
             return json.loads(text)
         except Exception as e:
-            print(f"[ERROR] Al consultar al LLM: {e}")
+            print(f"[ERROR] Failed to contact strategist: {e}")
             return {"error": "Failed to contact strategist"}
 
 # Ejemplo de uso rápido (solo para pruebas internas)

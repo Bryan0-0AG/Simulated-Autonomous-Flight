@@ -6,15 +6,16 @@
 #include "utils/vector2.h"
 
 enum class BuildingType {
-    OBSTACLE,   // Edificio normal (Gris)
-    CHARGER,    // Zona de carga (Azul)
-    COLLECTION  // Zona de recolección (Verde)
+    OBSTACLE,   // Normal building (Gray)
+    CHARGER,    // Charging zone (Blue)
+    COLLECTION, // Collection zone (Green)
+    SPAWN       // Spawn/Launch zone (Yellow/Orange)
 };
 
 struct Building {
     sf::FloatRect bounds;
     BuildingType type;
-    float height; // Para futuras visualizaciones 3D o capas de vuelo
+    float height; // For future 3D visualizations or flight layers
 };
 
 class ProceduralCity {
