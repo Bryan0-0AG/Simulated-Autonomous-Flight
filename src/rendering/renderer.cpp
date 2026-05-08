@@ -77,9 +77,13 @@ void Renderer::drawCity(const ProceduralCity& city) {
             rect.setOutlineColor(sf::Color::White);
             rect.setOutlineThickness(2.0f);
         } else if (b.type == BuildingType::COLLECTION) {
-            rect.setFillColor(sf::Color(50, 255, 50, 180)); // Green neon
+            rect.setFillColor(sf::Color(255, 0, 255, 180)); // Magenta neon
             rect.setOutlineColor(sf::Color::White);
-            rect.setOutlineThickness(2.0f);
+            rect.setOutlineThickness(4.0f);
+        } else if (b.type == BuildingType::DEPLOY) {
+            rect.setFillColor(sf::Color(128, 0, 128, 180)); // Purple neon
+            rect.setOutlineColor(sf::Color::White);
+            rect.setOutlineThickness(4.0f);
         } else if (b.type == BuildingType::SPAWN) {
             rect.setFillColor(sf::Color(255, 165, 0, 180)); // Orange neon
             rect.setOutlineColor(sf::Color::White);
@@ -88,6 +92,11 @@ void Renderer::drawCity(const ProceduralCity& city) {
             rect.setFillColor(sf::Color(50, 50, 50, 200)); // Dark grey
             rect.setOutlineColor(sf::Color(100, 100, 100));
             rect.setOutlineThickness(1.0f);
+        }
+
+        if (b.is_mission_active) {
+            rect.setOutlineColor(sf::Color(0, 255, 0)); // Bright Green for active mission
+            rect.setOutlineThickness(8.0f);
         }
         
         window.draw(rect);
@@ -163,4 +172,4 @@ void Renderer::run(const DroneChassis& DroneChassis) {
         updateBody(DroneChassis);
         display();
     }
-}
+}

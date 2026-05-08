@@ -31,3 +31,35 @@ float distance(Vector2 p1, Vector2 p2) {
 float magnitude(Vector2 v) {
     return std::sqrt(std::pow(v.x, 2) + std::pow(v.y, 2));
 }
+
+int findClosestExact(int n, int target) {
+    // Finds a value that is either a divisor or a multiple of n
+    // which is closest to the target. This ensures perfect alignment.
+    int closest = n;
+    int min_diff = std::abs(target - n);
+
+    // 1. Check divisors of n
+    for (int d = 1; d <= n; ++d) {
+        if (n % d == 0) {
+            int diff = std::abs(target - d);
+            if (diff < min_diff) {
+                min_diff = diff;
+                closest = d;
+            }
+        }
+    }
+
+    // 2. Check multiples of n
+    // We check up to target + n to find the closest possible multiple
+    for (int m = n; m <= target + n; m += n) {
+        int diff = std::abs(target - m);
+        if (diff < min_diff) {
+            min_diff = diff;
+            closest = m;
+        }
+        // In case of tie (e.g., target 10, batch 4, multiples 8 and 12),
+        // we keep the first one found (the smaller one) for stability.
+    }
+
+    return closest;
+}

@@ -16,10 +16,11 @@ constexpr float DT = 0.016f;
 // ==============================
 
 // General
-constexpr int DRONE_COUNT = 5000;
+constexpr int DRONE_COUNT = 10000;
 constexpr int SPAWN_INTERVAL = 1;
 constexpr float DRONE_SIZE = 4.0f;
 constexpr int BUILDINGS_TO_USE = -1; // -1 = all
+constexpr float TIME_SCALE = 1.0f;    // 1.0 = Normal, 0.2 = Slow Motion
 
 // Flocking
 constexpr float SEPARATION_RADIUS = 25.0f;
@@ -42,9 +43,10 @@ constexpr float BUILDING_MIN_HEIGHT = 150.0f;
 constexpr float BUILDING_MAX_HEIGHT = 750.0f;
 
 // Probabilidades de Tipos (Suma acumulada de 0 a 100)
-constexpr int PROB_CHARGER   = 15; // 0-15 (15%)
-constexpr int PROB_COLLECT   = 30; // 15-30 (15%)
-constexpr int PROB_SPAWN     = 55; // 30-55 (25%)
+constexpr int PROB_CHARGER   = 10; // 0-15 (15%)
+constexpr int PROB_COLLECT   = 15; // 15-30 (15%)
+constexpr int PROB_DEPLOY    = 15;
+constexpr int PROB_SPAWN     = 20; // 30-55 (25%)
 // Obstacles = 100 - (PROB_CHARGER + PROB_COLLECT + PROB_SPAWN)
 
 // ==============================
@@ -84,7 +86,7 @@ constexpr float MIN_ANGLE  = -0.5f;
 // ==============================
 // AI & BATTERY
 // ==============================
-constexpr float BATTERY_DRAIN = 0.05f;
+constexpr float BATTERY_DRAIN = 0.5f;
 constexpr float BATTERY_CHARGE_SPEED = 2.0f;
 
 // ==============================

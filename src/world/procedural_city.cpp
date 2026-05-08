@@ -22,14 +22,11 @@ void ProceduralCity::generate(unsigned int seed) {
             
             BuildingType type = BuildingType::OBSTACLE;
             int r = std::rand() % 100;
-            
-            if (buildings.empty()) {
-                type = BuildingType::SPAWN;
-            } else {
-                if (r < PROB_CHARGER) type = BuildingType::CHARGER;
-                else if (r < PROB_COLLECT) type = BuildingType::COLLECTION;
-                else if (r < PROB_SPAWN) type = BuildingType::SPAWN;
-            }
+
+            if (r < PROB_CHARGER) type = BuildingType::CHARGER;
+            else if (r < PROB_CHARGER + PROB_COLLECT) type = BuildingType::COLLECTION;
+            else if (r < PROB_CHARGER + PROB_COLLECT + PROB_DEPLOY) type = BuildingType::DEPLOY;
+            else if (r < PROB_CHARGER + PROB_COLLECT + PROB_DEPLOY + PROB_SPAWN) type = BuildingType::SPAWN;
 
             addBuilding(currentX, 0.0f, bWidth, bHeight, type);
             currentX += bWidth;

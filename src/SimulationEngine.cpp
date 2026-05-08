@@ -2,6 +2,7 @@
 #include "global_config.h"
 #include "swarm/swarm_manager.h"
 #include "rendering/renderer.h"
+#include "lab.h"
 #include <iostream>
 
 SimulationEngine::SimulationEngine() 
@@ -28,6 +29,9 @@ void SimulationEngine::init() {
     std::cout << "[ENGINE] Initializing Systems..." << std::endl;
     city->generate(static_cast<unsigned int>(std::time(nullptr)));
     bridge->connect(SERVER_IP, SERVER_PORT);
+
+    // Llamar al lab para iniciar la misión
+    triggerLabMission(swarm, city);
 }
 
 void SimulationEngine::run() {
@@ -41,7 +45,7 @@ void SimulationEngine::run() {
         renderer->handleEvents();
 
         // 2. Update Swarm (Physics & AI)
-        swarm->update(DT, *virtualWorld, *city);
+        swarm->update(DT * TIME_SCALE, *virtualWorld, *city);
 
         // 3. Render
         render();
@@ -67,9 +71,6 @@ void SimulationEngine::render() {
 void SimulationEngine::handleLogicPerSecond() {
     seconds_passed++;
     std::cout << "Second: " << seconds_passed << " | Drones: " << swarm->getDrones().size() << std::endl;
-
-    // Spawning
-    swarm->spawnFromRoofs(*city, DRONE_COUNT);
 
     // Stats
     SwarmStats stats = swarm->getStats();

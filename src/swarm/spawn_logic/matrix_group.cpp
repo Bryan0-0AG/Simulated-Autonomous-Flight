@@ -1,4 +1,4 @@
-#include "swarm/matrix_group.h"
+#include "swarm/spawn_logic/matrix_group.h"
 #include "swarm/swarm_dynamics.h"
 #include "AI/states.h"
 #include <iostream>
@@ -47,3 +47,27 @@ float MatrixGroup::getGlobalError(const std::vector<DroneChassis>& drones) const
     }
     return totalDist / children.size();
 }
+
+void MatrixGroup::reshape(int newCols, std::vector<DroneChassis>& drones) {
+    if (newCols < 1 || children.empty()) return;
+
+    this->cols = newCols;
+    this->rows = (static_cast<int>(children.size()) + cols - 1) / cols;
+
+    for (int i = 0; i < (int)children.size(); ++i) {
+        int row_from_top = i / cols;
+        int r = (rows - 1) - row_from_top;
+        int c = i % cols;
+
+        children[i].row = r;
+        children[i].col = c;
+
+        // Synchronize with the drone entity
+        int droneId = children[i].drone_id;
+        if (droneId >= 0 && droneId < (int)drones.size()) {
+            drones[droneId].group_row = r;
+            drones[droneId].group_col = c;
+        }
+    }
+}
+

@@ -8,6 +8,12 @@ void update_drone_ai(DroneChassis& drone, const world& vWorld, const ProceduralC
     DroneAction action = toAction(drone.current_action);
 
     // 1. Survival Logic: Battery Check
+    // Random extra drain during flight to create variance
+    if (drone.battery > 0.0f && state == DroneState::FLYING) {
+        float random_extra_drain = static_cast<float>(rand() % 100) / 10000.0f; // 0.0 to 0.01 extra per frame
+        drone.battery -= random_extra_drain;
+    }
+
     if (drone.battery < 20.0f && action == DroneAction::FOLLOW_MATRIX) {
         drone.current_action = toInt(DroneAction::GOING_TO_RECHARGE);
         // Landing spot (for now just a fixed spot or ground)

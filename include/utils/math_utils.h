@@ -8,5 +8,6 @@ void snap_zero(float& value, float epsilon = 1e-4f);
 int randint(int min, int max);
 float distance(Vector2 p1, Vector2 p2);
 float magnitude(Vector2 v);
+int findClosestExact(int n, int target);
 
 #endif

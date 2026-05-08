@@ -20,7 +20,8 @@ LIBS     = -lsfml-graphics -lsfml-window -lsfml-system -lsfml-network $(AMD_LIB)
 # ==========================================
 SOURCES = src/main.cpp \
           src/swarm/swarm_manager.cpp \
-          src/swarm/matrix_group.cpp \
+          src/swarm/spawn_logic/matrix_group.cpp \
+          src/swarm/spawn_logic/mission_orchestrator.cpp \
           src/SimulationEngine.cpp \
           src/utils/math_utils.cpp \
           src/world/world.cpp \
@@ -30,7 +31,8 @@ SOURCES = src/main.cpp \
           src/AI/states.cpp \
           src/AI/matrix_ai.cpp \
           src/network/bridge.cpp \
-          src/world/procedural_city.cpp
+          src/world/procedural_city.cpp \
+          src/lab.cpp
 
 # ==========================================
 # BLOCK 2: AMD / GPU (Kernels)

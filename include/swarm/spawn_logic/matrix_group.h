@@ -1,7 +1,7 @@
 #ifndef MATRIX_GROUP_H
 #define MATRIX_GROUP_H
 
-#include "../utils/vector2.h"
+#include "../../utils/vector2.h"
 #include <cmath>
 #include <vector>
 
@@ -22,6 +22,8 @@ public:
     float row_spacing;
     std::vector<MatrixChild> children;
     
+    Vector2 final_target;
+    
     int current_state;
     int current_action;
     float mission_timer;
@@ -37,6 +39,7 @@ public:
     float getGlobalError(const std::vector<DroneChassis>& drones) const;
     void moveTo(Vector2 newCenter);
     void updateMission(float dt);
+    void reshape(int newCols, std::vector<DroneChassis>& drones);
 };
 
 #endif

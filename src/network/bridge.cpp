@@ -15,7 +15,7 @@ bool NetworkBridge::connect(const std::string& ip, unsigned short port) {
         return false;
     }
     
-    sf::Socket::Status status = socket.connect(*address, port, sf::seconds(5));
+    sf::Socket::Status status = socket.connect(*address, port, sf::seconds(1));
     if (status != sf::Socket::Status::Done) {
         std::cerr << "[BRIDGE ERROR] No se pudo conectar al Orquestador Python en " << ip << ":" << port << std::endl;
         isConnected = false;

@@ -2,6 +2,7 @@
 #include "global_config.h"
 #include "AI/drone_ai.h"
 #include "AI/matrix_ai.h"
+#include "utils/math_utils.h"
 #include <iostream>
 #include <algorithm>
 #include <cmath>
@@ -49,78 +50,43 @@ void SwarmManager::deploySwarmOnBuilding(const Building& b, MatrixGroup& matrix,
     }
 }
 
-void SwarmManager::spawnFromRoofs(const ProceduralCity& city, int batchSize) {
-    if (drones.size() >= DRONE_COUNT) return;
+TransportMissionInfo SwarmManager::startRandomTransportMission(ProceduralCity& city) {
+    return MissionOrchestrator::startTransportMission(city);
+}
 
-    const auto& buildings = city.getBuildings();
-    if (buildings.empty()) return;
+void SwarmManager::processSpawning(float dt, const ProceduralCity& city) {
+    if (active_spawn_plans.empty()) return;
 
-    // 1. FASE DE PLANIFICACIÓN (Solo se ejecuta una vez)
-    if (active_spawn_plans.empty()) {
-        // Filtrar solo edificios de tipo SPAWN
-        std::vector<int> spawn_building_indices;
-        for (int i = 0; i < (int)buildings.size(); ++i) {
-            if (buildings[i].type == BuildingType::SPAWN) {
-                spawn_building_indices.push_back(i);
+    spawn_timer += dt;
+    if (spawn_timer >= 1.0f) {
+        const auto& buildings = city.getBuildings();
+        bool all_finished = true;
+
+        for (size_t i = 0; i < active_spawn_plans.size(); ++i) {
+            auto& plan = active_spawn_plans[i];
+            if (plan.actual_batch < plan.total_batches) {
+                int to_spawn = std::min(plan.drones_per_batch, plan.total_drones - plan.drones_spawned);
+                deploySwarmOnBuilding(buildings[plan.building_idx], matrix_groups[i], plan.drones_spawned, to_spawn);
+                
+                plan.drones_spawned += to_spawn;
+                plan.actual_batch++;
+                all_finished = false;
             }
         }
 
-        if (spawn_building_indices.empty()) {
-            std::cout << "[ERROR] No se encontraron edificios de tipo SPAWN en la ciudad." << std::endl;
-            return;
+        if (all_finished) {
+            // No limpiamos los planes inmediatamente si queremos conservarlos para algo, 
+            // pero para esta refactorizacion, si todos terminaron, podriamos limpiar.
+            // active_spawn_plans.clear();
         }
-
-        int buildings_to_use = (BUILDINGS_TO_USE == -1) ? 
-            (int)spawn_building_indices.size() : 
-            std::min((int)spawn_building_indices.size(), BUILDINGS_TO_USE);
-        int drones_per_building = DRONE_COUNT / buildings_to_use;
-
-        for (int i = 0; i < buildings_to_use; ++i) {
-            int b_idx = spawn_building_indices[i];
-            const auto& b = buildings[b_idx];
-
-            Vector2 target_pos = { b.bounds.position.x + b.bounds.size.x / 2, 1500.0f };
-            int cols = DRONES_PER_ROW;
-            int rows = (drones_per_building + cols - 1) / cols;
-            
-            MatrixGroup matrix(i, target_pos, cols, FORMATION_SPACING_X, rows, FORMATION_SPACING_Y);
-            matrix.target_count = drones_per_building; // <-- AQUÍ
-            
-            SpawnBuilding plan;
-            plan.building_idx = b_idx;
-            plan.actual_batch = 0;
-            plan.total_drones = matrix.rows * matrix.cols;
-            
-            float roof_spacing = 20.0f;
-            int drones_per_batch = static_cast<int>(buildings[i].bounds.size.x / roof_spacing);
-            if (drones_per_batch < 1) drones_per_batch = 1;
-            
-            plan.drones_per_batch = drones_per_batch;
-            plan.total_batches = (plan.total_drones + drones_per_batch - 1) / drones_per_batch;
-            plan.drones_spawned = 0;
-            
-            active_spawn_plans.push_back(plan);
-            matrix_groups.push_back(matrix);
-        }
-        std::cout << "[SWARM] Spawning plan initialized for " << buildings_to_use << " buildings." << std::endl;
-    }
-
-    // 2. FASE DE EJECUCIÓN
-    for (size_t i = 0; i < active_spawn_plans.size(); ++i) {
-        auto& plan = active_spawn_plans[i];
-        if (plan.actual_batch < plan.total_batches) {
-            int to_spawn = std::min(plan.drones_per_batch, plan.total_drones - plan.drones_spawned);
-            
-            // USAR LA MATRIZ REAL DEL VECTOR GLOBAL
-            deploySwarmOnBuilding(buildings[plan.building_idx], matrix_groups[i], plan.drones_spawned, to_spawn);
-            
-            plan.drones_spawned += to_spawn;
-            plan.actual_batch++;
-        }
+        spawn_timer = 0.0f;
     }
 }
 
 void SwarmManager::update(float dt, const world& vWorld, const ProceduralCity& city) {
+    // 0. Spawning Logic
+    processSpawning(dt, city);
+
     if (drones.empty()) return;
 
     // 1. AI Decisions & Mission Orchestration (CPU)
