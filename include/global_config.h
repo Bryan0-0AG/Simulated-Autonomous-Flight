@@ -95,7 +95,7 @@ constexpr float BATTERY_CHARGE_SPEED = 2.0f;
 // ==============================
 // NETWORK
 // ==============================
-const std::string SERVER_IP = "127.0.0.1";
+const std::string SERVER_IP = "134.199.196.239";
 const unsigned short SERVER_PORT = 9999;
 
 // ==============================

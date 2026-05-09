@@ -1,20 +1,30 @@
 # ==========================================
-# CONFIGURACIÓN DE COMPILADORES
+# DETECCIÓN DE SISTEMA OPERATIVO Y RUTAS
 # ==========================================
 CXX      = g++
-HIPCC    = hipcc
 OUT_SERVER = app_server
 OUT_CLIENT = app_client
 
-# AMD ROCm Paths (Windows)
-AMD_PATH = C:/Program Files/AMD/ROCm/7.1
-AMD_INC  = -I"$(AMD_PATH)/include"
-AMD_LIB  = -L"$(AMD_PATH)/lib" -lamdhip64
-
-# Flags and Libraries
-CXXFLAGS = -Wall -std=c++17 -Iinclude -Isrc $(AMD_INC)
-HIPFLAGS = -g
-LIBS     = -lsfml-graphics -lsfml-window -lsfml-system -lsfml-network $(AMD_LIB)
+ifeq ($(OS),Windows_NT)
+    # --------- WINDOWS (Local) ---------
+    HIPCC    = hipcc
+    AMD_PATH = C:/Program Files/AMD/ROCm/7.1
+    AMD_INC  = -I"$(AMD_PATH)/include"
+    AMD_LIB  = -L"$(AMD_PATH)/lib" -lamdhip64
+    CXXFLAGS = -Wall -std=c++17 -Iinclude -Isrc $(AMD_INC)
+    HIPFLAGS = -g
+    LIBS     = -lsfml-graphics -lsfml-window -lsfml-system -lsfml-network $(AMD_LIB)
+    CLEAN_CMD = rm -rf build && rm -f $(OUT_SERVER) $(OUT_SERVER).exe $(OUT_CLIENT) $(OUT_CLIENT).exe
+else
+    # --------- LINUX (AMD Cloud) ---------
+    HIPCC    = /opt/rocm/bin/hipcc
+    AMD_INC  = -I/opt/rocm/include
+    AMD_LIB  = -L/opt/rocm/lib -lamdhip64
+    CXXFLAGS = -Wall -std=c++17 -fPIC -Iinclude -Isrc -I/usr/local/include $(AMD_INC)
+    HIPFLAGS = -g -fPIC
+    LIBS     = -L/usr/local/lib -Wl,-rpath=/usr/local/lib -lsfml-graphics -lsfml-window -lsfml-system -lsfml-network $(AMD_LIB)
+    CLEAN_CMD = rm -rf build && rm -f $(OUT_SERVER) $(OUT_CLIENT)
+endif
 
 # ==========================================
 # BLOCK 1: C++ / CPU (Core Sources)
@@ -69,8 +79,13 @@ build_dir:
 	@mkdir -p build
 
 clean:
-	@rm -rf build
-	@rm -f $(OUT_SERVER) $(OUT_SERVER).exe $(OUT_CLIENT) $(OUT_CLIENT).exe
+	@$(CLEAN_CMD)
 
-run: all
+run_server: server
+	./$(OUT_SERVER)
+
+run_client: client
+	./$(OUT_CLIENT)
+
+run_brain:
 	py ai_commander/brain.py
