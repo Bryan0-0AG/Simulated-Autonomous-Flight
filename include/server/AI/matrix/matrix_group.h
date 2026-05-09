@@ -31,12 +31,13 @@ public:
     int current_action;
     float mission_timer;
     int target_count = 0; // Cuántos drones esperamos realmente
+    int lane = 0;
 
     bool isFull() const { return (int)children.size() >= target_count && target_count > 0; }
 
-    MatrixGroup() : id(-1), rows(0), cols(0), center({0,0}), col_spacing(0), row_spacing(0), current_state(0), current_action(0), target_count(0) {}
+    MatrixGroup() : id(-1), rows(0), cols(0), center({0,0}), col_spacing(0), row_spacing(0), current_state(0), current_action(0), target_count(0), lane(0) {}
     MatrixGroup(int id, Vector2 center, int cols, float col_spacing, int rows, float row_spacing)
-        : id(id), rows(rows), cols(cols), center(center), col_spacing(col_spacing), row_spacing(row_spacing), current_state(0), current_action(0), target_count(rows*cols) 
+        : id(id), rows(rows), cols(cols), center(center), col_spacing(col_spacing), row_spacing(row_spacing), current_state(0), current_action(0), target_count(rows*cols), lane(0) 
     {
         // El ancho de la carretera determina la altura máxima permitida de la matriz
         int max_rows = std::max(1, static_cast<int>(HIGHWAY_WIDTH / row_spacing));

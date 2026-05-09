@@ -11,6 +11,9 @@
 #include "global_config.h"
 #include "AI/drone_states.h"
 #include "drone_dynamics.h"
+#include "AI/matrix/matrix_group.h"
+#include "AI/matrix/properties.h"
+#include "AI/matrix/states.h"
 
 class TelemetryLogger {
 private:
@@ -32,21 +35,31 @@ public:
         file_all << "time,num_drones,id,pos_x,pos_y,vel_x,vel_y,"
                  << "target_x,target_y,thrust_val,angle_val,"
                  << "error_x,error_y,f_sep_x,f_sep_y,"
-                 << "action,state,battery\n";
+                 << "action,state,battery,childs\n";
     }
 
-    void log(float time, int num_drones, const DroneChassis& d) {
+    void log(float time, int num_drones, const MatrixGroup& matrix, const std::vector<DroneChassis>& drones) {
+        Vector2 avg_pos = MatrixAI::Properties::getAveragePosition(matrix, drones);
+        Vector2 avg_vel = MatrixAI::Properties::getAverageVelocity(matrix, drones);
+        float avg_battery = MatrixAI::Properties::getAverageBattery(matrix, drones);
+        Vector2 avg_repulsion = MatrixAI::Properties::getAverageRepulsionForce(matrix, drones);
+        float avg_thrust = MatrixAI::Properties::getAverageThrust(matrix, drones);
+        float avg_angle = MatrixAI::Properties::getAverageAngle(matrix, drones);
+        Vector2 avg_error = MatrixAI::Properties::getVectorError(matrix, drones);
+
         file_all << time << ","
                  << num_drones << ","
-                 << d.id << ","
-                 << d.position.x << "," << d.position.y << ","
-                 << d.velocity.x << "," << d.velocity.y << ","
-                 << d.target.x << "," << d.target.y << ","
-                 << d.control_output.thrust << "," << d.control_output.angle << ","
-                 << d.error.x << "," << d.error.y << ","
-                 << d.f_separation.x << "," << d.f_separation.y << ","
-                 << toString(static_cast<DroneAction>(d.current_action)) << "," << toString(static_cast<DroneState>(d.current_state)) << ","
-                 << d.battery << "\n";
+                 << matrix.id << ","
+                 << avg_pos.x << "," << avg_pos.y << ","
+                 << avg_vel.x << "," << avg_vel.y << ","
+                 << matrix.current_target.x << "," << matrix.current_target.y << ","
+                 << avg_thrust << "," << avg_angle << ","
+                 << avg_error.x << "," << avg_error.y << ","
+                 << avg_repulsion.x << "," << avg_repulsion.y << ","
+                 << MatrixAI::States::toString(MatrixAI::States::toAction(matrix.current_action)) << "," 
+                 << MatrixAI::States::toString(MatrixAI::States::toState(matrix.current_state)) << ","
+                 << avg_battery << ","
+                 << matrix.children.size() << "\n";
 
         file_all.flush();
     }

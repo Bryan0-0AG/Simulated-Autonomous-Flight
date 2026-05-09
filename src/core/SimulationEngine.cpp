@@ -42,7 +42,9 @@ void SimulationEngine::init() {
             bridge->startVisualizerServer(9998); // Abrir puerto para que el Visor se conecte
         }
 
-        triggerLabMission(swarm, city);
+        for (int i = 0; i<6; i++){
+            triggerLabMission(swarm, city);
+        }
     } else if (currentMode == EngineMode::CLIENT) {
         std::cout << "[ENGINE] Connecting to Cloud Simulator at " << SERVER_IP << "..." << std::endl;
         while (!bridge->connectToCloud(SERVER_IP, 9998)) {
@@ -78,6 +80,7 @@ void SimulationEngine::run() {
             
             if (currentMode == EngineMode::SERVER) {
                 bridge->sendPositionsToViewer(swarm->getDrones());
+                bridge->sendBuildingsToViewer(*city);
             }
         } else if (currentMode == EngineMode::CLIENT) {
             // El cliente no simula fisicas, solo recibe posiciones
@@ -133,9 +136,7 @@ void SimulationEngine::handleLogicPerSecond() {
     }
 
     // File Telemetry (Local Dashboard)
-    for (const auto& drone : swarm->getDrones()) {
-        if (drone.id < 9) {
-            logger->log(total_time, stats.active_drones, drone);
-        }
+    for (const auto& matrix : swarm->getMatrixGroups()) {
+        logger->log(total_time, stats.active_drones, matrix, swarm->getDrones());
     }
 }

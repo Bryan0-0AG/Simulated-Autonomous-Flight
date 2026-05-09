@@ -5,14 +5,34 @@
 namespace MatrixAI {
 namespace Highways {
 
-    float getAssignedAltitude(const MatrixGroup& self) {
-        // En nuestro mundo virtual, determinamos la dirección horizontal
+    // Variables estáticas para asignación secuencial
+    static int next_outbound = 0;
+    static int next_inbound = 0;
+
+    void assignLane(MatrixGroup& self) {
         bool goingRight = (self.final_target.x >= self.center.x);
         
         if (goingRight) {
-            return HIGHWAY_Y_OUTBOUND; // Carril de ida (Capa Media-Baja)
+            self.lane = next_outbound;
+            next_outbound = (next_outbound + 1) % HIGHWAY_LANES_PER_DIR;
         } else {
-            return HIGHWAY_Y_INBOUND; // Carril de vuelta (Capa Media-Alta)
+            // Los carriles inbound se manejan a partir del offset HIGHWAY_LANES_PER_DIR
+            self.lane = HIGHWAY_LANES_PER_DIR + next_inbound;
+            next_inbound = (next_inbound + 1) % HIGHWAY_LANES_PER_DIR;
+        }
+
+        self.center.y = getAssignedAltitude(self);
+        self.final_target.y = self.center.y; // El destino final Y se mantiene en su propio carril
+    }
+
+    float getAssignedAltitude(const MatrixGroup& self) {
+        if (self.lane < HIGHWAY_LANES_PER_DIR) {
+            // Es un carril Outbound
+            return HIGHWAY_Y_OUTBOUND + (self.lane * HIGHWAY_LANE_SPACING);
+        } else {
+            // Es un carril Inbound
+            int local_lane = self.lane - HIGHWAY_LANES_PER_DIR;
+            return HIGHWAY_Y_INBOUND + (local_lane * HIGHWAY_LANE_SPACING);
         }
     }
 

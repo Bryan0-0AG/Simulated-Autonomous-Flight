@@ -60,18 +60,51 @@ make run_brain
 
 ---
 
-## 🗺️ Hackathon Roadmap
-### Phase 1 & 2 (DONE ✅)
-- [x] Modular C++ engine and spatial grids.
-- [x] Gemini 1.5 Integration and Streamlit Dashboard.
+---
 
-### Phase 3: AMD Cloud Native (DONE ✅)
-- [x] Port physics to `.hip` kernels.
+## 🛰️ Intelligence Features: Autonomous Swarm Highways
+The system now features a robust traffic management system for complex drone swarms:
+
+1. **Dynamic Perception (Radar & Vision)**: 
+   - Uses real-time drone centroids and AABB (Bounding Boxes) instead of static matrix centers.
+   - Separate X/Y axis detection for precise collision avoidance in high-altitude highways.
+
+2. **Priority Negotiation (`ShouldIWait`)**:
+   - Implements a communication-like protocol to resolve traffic deadlocks.
+   - Active cruising matrices have priority over staging/takeoff swarms.
+   - Unique ID-based tie-breaking ensures orderly flow.
+
+3. **Autonomous "Step" Navigation**:
+   - Matrices can "freeze" in place (Dynamic Freezing) upon detecting danger and resume their path towards the `current_target` once the space is clear.
+
+4. **Multi-Lane Orchestration**:
+   - Procedural lane assignment (Inbound/Outbound) based on mission objectives.
+   - Dynamic vertical layering to optimize airspace usage.
+
+## 📊 Fleet Intelligence Dashboard
+A modern web-based monitoring system powered by **FastAPI** and **Plotly**:
+- **Individual Agents Tracking**: Real-time telemetry for thousands of discrete drones.
+- **Groupal Agents Management**: Monitoring and state tracking of matrix-level collective intelligence.
+- **Kinematic Analysis**: Live charts for PID error, battery drain, and actuator response.
+
+---
+
+## 🗺️ Hackathon Roadmap
+### Phase 1, 2 & 3 (DONE ✅)
+- [x] Port physics to `.hip` kernels and AMD ROCm.
 - [x] Decouple Headless Server and SFML Client.
 - [x] High-speed TCP Binary streaming.
-- [x] Smart Universal Makefile.
-- [x] Fix Server-side FPS limiters for real-time physics.
+- [x] Gemini 1.5 Integration and AI Orchestration.
 
-### Phase 4: Extreme Scaling (UP NEXT 🚀)
-- [ ] Push to 100,000 agents.
-- [ ] Enhance client-side UI/HUD with telemetry stats.
+### Phase 4: Autonomous Highways (DONE ✅)
+- [x] Implementation of Matrix-level Vision and Radar.
+- [x] Dynamic Bounding Boxes based on real drone positions.
+- [x] Priority-based Negotiation Protocol for traffic.
+- [x] Telemetry refactor to Vector2 (X/Y) for precision.
+- [x] Dashboard metrics for Individual vs Groupal agents.
+
+### Phase 5: Extreme Scaling (UP NEXT 🚀)
+- [ ] Push to 100,000 agents on AMD MI300X.
+- [ ] Implement V2V (Vehicle-to-Vehicle) complex swarm signaling.
+- [ ] Real-time procedural city expansion during flight.
+

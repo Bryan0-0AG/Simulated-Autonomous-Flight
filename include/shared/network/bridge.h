@@ -1,10 +1,11 @@
 #ifndef NETWORK_BRIDGE_H
 #define NETWORK_BRIDGE_H
 
+#include <vector>
 #include <SFML/Network.hpp>
 #include <string>
-#include <vector>
 #include "drone_dynamics.h"
+#include "world/procedural_city.h"
 
 class NetworkBridge {
 public:
@@ -27,6 +28,7 @@ public:
     // Para el Servidor (Nube AMD)
     bool startVisualizerServer(unsigned short port);
     void sendPositionsToViewer(const std::vector<DroneChassis>& drones);
+    void sendBuildingsToViewer(const ProceduralCity& city);
 
     // Para el Cliente (Tu PC Local)
     bool connectToCloud(const std::string& ip, unsigned short port);

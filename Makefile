@@ -36,8 +36,8 @@ CORE_SOURCES = src/server/swarm/swarm_manager.cpp \
           src/server/AI/matrix/matrix_group.cpp \
           src/server/missions/mission_orchestrator.cpp \
           src/server/missions/mission_calculator.cpp \
-          src/server/swarm/spawners/matrix_spawner.cpp \
-          src/server/swarm/spawners/drone_spawner.cpp \
+          src/server/AI/matrix/spawner.cpp \
+          src/server/AI/drone_spawner.cpp \
           src/core/SimulationEngine.cpp \
           src/shared/utils/math_utils.cpp \
           src/shared/world/world.cpp \

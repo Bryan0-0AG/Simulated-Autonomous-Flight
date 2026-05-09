@@ -21,6 +21,8 @@ namespace States {
     int toInt(MatrixState s);
     MatrixAction toAction(int a);
     MatrixState toState(int s);
+    std::string toString(MatrixAction a);
+    std::string toString(MatrixState s);
 
     // Actualiza el estado global de la matriz (ej. actualizar timer)
     void updateState(MatrixGroup& self, float dt);

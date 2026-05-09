@@ -38,8 +38,10 @@ constexpr float MATRIX_AI_INTERVALE = 5.0f;
 
 // Highways
 constexpr float HIGHWAY_WIDTH = 200.0f;
-constexpr float HIGHWAY_Y_OUTBOUND = 300.0f; // Carril de ida
-constexpr float HIGHWAY_Y_INBOUND = 500.0f;  // Carril de vuelta
+constexpr float HIGHWAY_LANE_SPACING = 300.0f; // Espacio vertical entre carriles
+constexpr int HIGHWAY_LANES_PER_DIR = 3;     // 3 carriles de ida, 3 de vuelta
+constexpr float HIGHWAY_Y_OUTBOUND = 1300.0f; // Altura base del carril de ida
+constexpr float HIGHWAY_Y_INBOUND = 2500.0f;  // Altura base del carril de vuelta
 
 // ==============================
 // CITY GENERATION

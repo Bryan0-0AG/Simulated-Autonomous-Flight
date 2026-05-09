@@ -3,8 +3,8 @@
 #include "AI/drone_ai.h"
 #include "AI/matrix/decisions.h"
 #include "AI/matrix/properties.h"
-#include "swarm/spawners/matrix_spawner.h"
-#include "swarm/spawners/drone_spawner.h"
+#include "AI/matrix/spawner.h"
+#include "AI/drone_spawner.h"
 #include "utils/math_utils.h"
 #include <iostream>
 #include <algorithm>

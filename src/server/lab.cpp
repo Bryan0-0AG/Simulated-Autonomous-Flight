@@ -1,6 +1,7 @@
 #include "lab.h"
 #include "swarm/swarm_manager.h"
 #include "world/procedural_city.h"
+#include "AI/matrix/highways.h"
 #include <iostream>
 
 void triggerLabMission(SwarmManager* swarm, ProceduralCity* city) {
@@ -24,6 +25,7 @@ void triggerLabMission(SwarmManager* swarm, ProceduralCity* city) {
         auto& matrices = swarm->getMatrixGroups();
         for (size_t i = initial_matrix_count; i < matrices.size(); ++i) {
             matrices[i].final_target = info.endPos;
+            MatrixAI::Highways::assignLane(matrices[i]);
         }
     }
     

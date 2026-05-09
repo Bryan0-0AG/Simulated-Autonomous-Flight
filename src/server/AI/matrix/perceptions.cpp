@@ -12,8 +12,8 @@ namespace Perceptions {
                 a.min.y <= b.max.y && a.max.y >= b.min.y);
     }
 
-    bool Vision(const MatrixGroup& self, Direction dir, float distance, const std::vector<MatrixGroup>& all_matrices) {
-        Properties::Rect my_bounds = Properties::getBounds(self);
+    bool Vision(const MatrixGroup& self, Direction dir, float distance, const std::vector<MatrixGroup>& all_matrices, const std::vector<DroneChassis>& drones) {
+        Properties::Rect my_bounds = Properties::getDynamicBounds(self, drones);
         
         // Extender nuestra caja (AABB) en la dirección especificada simulando un Raycast ancho
         switch(dir) {
@@ -30,7 +30,7 @@ namespace Perceptions {
         for (const auto& other : all_matrices) {
             if (other.id == self.id) continue;
             
-            Properties::Rect other_bounds = Properties::getBounds(other);
+            Properties::Rect other_bounds = Properties::getDynamicBounds(other, drones);
             
             // Si nuestro raycast rectangular intersecta a la otra matriz, la "vemos"
             if (checkAABBIntersect(my_bounds, other_bounds)) {
@@ -40,21 +40,32 @@ namespace Perceptions {
         return false;
     }
 
-    bool Radar(const MatrixGroup& self, float radius, const std::vector<MatrixGroup>& all_matrices) {
+    bool Radar(const MatrixGroup& self, float radiusX, float radiusY, const std::vector<MatrixGroup>& all_matrices, const std::vector<DroneChassis>& drones) {
+        Vector2 my_avg = Properties::getAveragePosition(self, drones);
+
         for (const auto& other : all_matrices) {
             if (other.id == self.id) continue;
             
-            float dist = distance(self.center, other.center);
-            if (dist <= radius) {
+            Vector2 other_avg = Properties::getAveragePosition(other, drones);
+            float dx = std::abs(my_avg.x - other_avg.x);
+            float dy = std::abs(my_avg.y - other_avg.y);
+
+            if (dx <= radiusX && dy <= radiusY) {
                 return true;
             }
         }
         return false;
     }
 
-    bool Communication(const MatrixGroup& self, std::string& out_message) {
-        // TODO: Escuchar paquetes TCP o variables compartidas
-        return false;
+    bool ShouldIWait(const MatrixGroup& self, const MatrixGroup& other) {
+        // Regla 1: La que ya está en misión activa tiene prioridad sobre la que está en despegue (STAGING)
+        if (self.current_state == 0 && other.current_state != 0) return true; // Yo espero (estoy en staging)
+        if (self.current_state != 0 && other.current_state == 0) return false; // Yo sigo (estoy en misión)
+
+        // Regla 2: Si ambas están en el mismo estado, la de ID menor tiene prioridad
+        if (self.id > other.id) return true; // Yo espero
+        
+        return false; // Yo sigo
     }
 
 }

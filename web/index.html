@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AMD Swarm Commander - Global Operations</title>
+    <!-- Modern Typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <!-- Plotly for Dashboard -->
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Controls -->
+        <aside class="glass-panel sidebar">
+            <div class="brand">
+                <h1 class="orbitron">SWARM<span class="highlight">OS</span></h1>
+                <p class="subtitle">AMD ROCm Powered</p>
+            </div>
+
+            <!-- Main Navigation -->
+            <nav class="main-nav">
+                <a href="#" class="nav-item active" data-target="view-command">
+                    <span class="icon">🛰️</span> Command Center
+                </a>
+                <a href="#" class="nav-item" data-target="view-analytics">
+                    <span class="icon">📊</span> Fleet Intelligence
+                </a>
+                <a href="#" class="nav-item" id="nav-server-manage">
+                    <span class="icon">⚙️</span> Server Management
+                </a>
+            </nav>
+
+            <nav class="controls" id="sidebar-controls">
+                <div class="control-group">
+                    <h3>Tactical Deployment</h3>
+                    <button id="btn-transport" class="btn primary-btn">
+                        <span class="icon">🚀</span> Start Transport Mission
+                    </button>
+                    <button id="btn-mass" class="btn warning-btn">
+                        <span class="icon">🔥</span> Mass Swarm Deploy
+                    </button>
+                    <button id="btn-recall" class="btn danger-btn">
+                        <span class="icon">⚠️</span> Emergency Recall
+                    </button>
+                </div>
+            </nav>
+
+            <div class="system-status">
+                <h3>System Status</h3>
+                <div class="status-item">
+                    <span>Server Connection</span>
+                    <span id="conn-status" class="status-indicator offline">Offline</span>
+                </div>
+                <div class="status-item">
+                    <span>Active Drones</span>
+                    <span id="stat-drones" class="metric">0</span>
+                </div>
+                <div class="status-item">
+                    <span>Live Missions</span>
+                    <span id="stat-missions" class="metric">0</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Workspace -->
+        <main class="workspace">
+            
+            <!-- VIEW 1: COMMAND CENTER -->
+            <section id="view-command" class="view-section active">
+                <!-- Header Metrics -->
+                <header class="glass-panel topbar">
+                    <div class="top-metric">
+                        <span class="label">Engine Status</span>
+                        <span class="value orbitron" id="cmd-engine-status" style="color: #ff4d4d;">INACTIVE</span>
+                    </div>
+                    <div class="top-metric">
+                        <span class="label">GPU Compute</span>
+                        <span class="value orbitron" id="cmd-gpu-status">IDLE</span>
+                    </div>
+
+                    <div class="top-metric">
+                        <span class="label">Frame Rate</span>
+                        <span class="value orbitron" id="stat-fps">60 FPS</span>
+                    </div>
+                </header>
+
+                <!-- Render Target -->
+                <div class="canvas-container glass-panel">
+                    <canvas id="swarmCanvas"></canvas>
+                    <div class="canvas-overlay">
+                        <h2 class="orbitron">LIVE SATELLITE FEED</h2>
+                        <p class="coords">LAT: 34.0522° N | LNG: 118.2437° W</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW 2: ANALYTICS (NATIVE DASHBOARD) -->
+            <section id="view-analytics" class="view-section glass-panel" style="overflow-y: auto; padding: 1.5rem;">
+                <header class="section-header" style="padding: 0 0 1rem 0; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h2 class="orbitron">FLEET INTELLIGENCE</h2>
+                        <p>Real-time telemetry and advanced prediction models.</p>
+                    </div>
+                    <div style="display: flex; gap: 1rem; align-items: center;">
+                        <select id="dash-session-select" class="form-group input" style="background: rgba(0,0,0,0.3); color: var(--primary); border: 1px solid var(--glass-border); padding: 0.5rem; border-radius: 4px;">
+                            <option value="">Loading sessions...</option>
+                        </select>
+                        <button id="btn-refresh-dash" class="btn primary-btn" style="padding: 0.5rem 1rem;">Refresh</button>
+                    </div>
+                </header>
+
+                <div class="dash-content" style="display: flex; flex-direction: column; gap: 1.5rem; margin-top: 1.5rem;">
+                    <!-- Metrics Row -->
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                        <div class="metric-card glass-panel" style="flex: 1; padding: 1rem; text-align: center;">
+                            <div style="font-size: 0.8rem; color: var(--text-muted);">Mission Duration</div>
+                            <div id="m-duration" class="metric" style="font-size: 1.5rem;">0.0 s</div>
+                        </div>
+                        <div class="metric-card glass-panel" style="flex: 1; padding: 1rem; text-align: center;">
+                            <div style="font-size: 0.8rem; color: var(--text-muted);">Individual Agents</div>
+                            <div id="m-swarm" class="metric" style="font-size: 1.5rem;">0 agents</div>
+                        </div>
+                        <div class="metric-card glass-panel" style="flex: 1; padding: 1rem; text-align: center;">
+                            <div style="font-size: 0.8rem; color: var(--text-muted);">Groupal Agents</div>
+                            <div id="m-matrices" class="metric" style="font-size: 1.5rem;">0 matrices</div>
+                        </div>
+                        <div class="metric-card glass-panel" style="flex: 1; padding: 1rem; text-align: center;">
+                            <div style="font-size: 0.8rem; color: var(--text-muted);">Peak Velocity</div>
+                            <div id="m-velocity" class="metric" style="font-size: 1.5rem;">0.0 px/s</div>
+                        </div>
+                        <div class="metric-card glass-panel" style="flex: 1; padding: 1rem; text-align: center;">
+                            <div style="font-size: 0.8rem; color: var(--text-muted);">Avg. Battery</div>
+                            <div id="m-battery" class="metric" style="font-size: 1.5rem;">0.0%</div>
+                        </div>
+                    </div>
+
+                    <!-- Row 1 -->
+                    <div style="display: flex; gap: 1.5rem; min-height: 350px; flex-wrap: wrap; width: 100%;">
+                        <div class="glass-panel" style="flex: 2 1 400px; padding: 1rem; display: flex; flex-direction: column; min-width: 0;">
+                            <h3 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--text-muted);">🌐 Global Swarm Trajectories</h3>
+                            <div id="plot-traj" style="flex: 1; min-height: 0;"></div>
+                        </div>
+                        <div class="glass-panel" style="flex: 1 1 300px; padding: 1rem; display: flex; flex-direction: column; min-width: 0;">
+                            <h3 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--text-muted);">🧠 AI State Distribution</h3>
+                            <div id="plot-states" style="flex: 1; min-height: 0;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Row 2 -->
+                    <div style="display: flex; gap: 1.5rem; min-height: 300px; flex-wrap: wrap; width: 100%;">
+                        <div class="glass-panel" style="flex: 1 1 250px; padding: 1rem; display: flex; flex-direction: column; min-width: 0;">
+                            <h3 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--text-muted);">🎮 PID Control Performance</h3>
+                            <div id="plot-pid" style="flex: 1; min-height: 0;"></div>
+                        </div>
+                        <div class="glass-panel" style="flex: 1 1 250px; padding: 1rem; display: flex; flex-direction: column; min-width: 0;">
+                            <h3 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--text-muted);">⚡ Power Consumption</h3>
+                            <div id="plot-power" style="flex: 1; min-height: 0;"></div>
+                        </div>
+                        <div class="glass-panel" style="flex: 1 1 250px; padding: 1rem; display: flex; flex-direction: column; min-width: 0;">
+                            <h3 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--text-muted);">⚙️ Actuator Response</h3>
+                            <div id="plot-actuator" style="flex: 1; min-height: 0;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Row 3 -->
+                    <div style="display: flex; gap: 1.5rem; min-height: 300px; flex-wrap: wrap; width: 100%;">
+                        <div class="glass-panel" style="flex: 1 1 300px; padding: 1rem; display: flex; flex-direction: column; min-width: 0;">
+                            <h3 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--text-muted);">🛡️ Collision Avoidance Stress</h3>
+                            <div id="plot-collision" style="flex: 1; min-height: 0;"></div>
+                        </div>
+                        <div class="glass-panel" style="flex: 1 1 300px; padding: 1rem; display: flex; flex-direction: column; min-width: 0;">
+                            <h3 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--text-muted);">📊 Kinematic Profile (Avg)</h3>
+                            <div id="plot-kinematic" style="flex: 1; min-height: 0;"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            </section>
+        </main>
+
+        <!-- SERVER MANAGEMENT SLIDE PANEL -->
+        <aside id="slide-server" class="slide-panel">
+            <button class="close-panel-btn" id="btn-close-server">×</button>
+            <header class="section-header" style="padding: 0 0 1rem 0; border-bottom: 1px solid var(--glass-border); flex-shrink: 0;">
+                <h2 class="orbitron" style="font-size: 1.2rem;">SERVER MANAGEMENT</h2>
+                <p>Configure and control the ROCm engine.</p>
+            </header>
+            
+            <!-- Initial Configurations (Disabled when running) -->
+            <div class="config-form" id="engine-config-form">
+                <div class="form-group">
+                    <label>Drone PID (Proportional)</label>
+                    <input type="number" id="cfg-pid-p" value="1.5" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label>Battery Drain Rate</label>
+                    <input type="number" id="cfg-battery" value="0.5" step="0.1">
+                </div>
+                <div class="form-group">
+                    <label>Max Swarm Density</label>
+                    <input type="number" id="cfg-density" value="5000" step="100">
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 0.5rem; margin-top: 1.5rem; flex-shrink: 0;">
+                <button id="btn-boot-engine" class="btn" style="flex: 1; background: rgba(0, 255, 128, 0.1); color: #00ff80; border: 1px solid #00ff80; padding: 1rem; font-size: 0.9rem;">
+                    <span class="icon">▶️</span> Boot
+                </button>
+                <button id="btn-kill-engine" class="btn" style="flex: 1; background: rgba(255, 77, 77, 0.1); color: #ff4d4d; border: 1px solid #ff4d4d; padding: 1rem; font-size: 0.9rem;" disabled>
+                    <span class="icon">⏹️</span> Kill
+                </button>
+            </div>
+
+            <!-- Live Terminal Console -->
+            <div class="terminal-window glass-panel" style="flex: 1; min-height: 0; margin-top: 1.5rem; display: flex; flex-direction: column;">
+                <div class="terminal-header" style="flex-shrink: 0; padding: 0.5rem; font-size: 0.75rem;">
+                    <span>>_ TERMINAL</span>
+                    <button id="btn-clear-term" class="btn outline-btn" style="padding: 2px 6px; font-size: 0.65rem; width: auto; margin: 0;">Clear</button>
+                </div>
+                <div id="terminal-output" class="terminal-body" style="flex: 1; min-height: 0; overflow-y: auto; padding: 0.5rem; font-size: 0.75rem;">
+                    <div class="term-line system">Waiting for ROCm Engine connection...</div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <script src="app.js"></script>
+    <script src="dashboard.js"></script>
+</body>
+</html>

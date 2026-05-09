@@ -8,7 +8,7 @@ namespace Actions {
     void executeMove(MatrixGroup& self, Vector2 new_target);
 
     // Mantiene la matriz en su lugar
-    void executeWait(MatrixGroup& self, float dt);
+    void executeWait(MatrixGroup& self, float dt, const std::vector<DroneChassis>& drones);
 
     // Reformatea la matriz dinámicamente
     void reshape(MatrixGroup& self, int newCols, std::vector<DroneChassis>& drones);

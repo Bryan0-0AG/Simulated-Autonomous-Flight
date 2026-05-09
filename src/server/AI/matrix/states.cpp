@@ -27,6 +27,25 @@ namespace States {
         }
     }
 
+    std::string toString(MatrixAction a) {
+        switch(a) {
+            case MatrixAction::TAKEOFF: return "TAKEOFF";
+            case MatrixAction::FOLLOW_MATRIX: return "FOLLOW_MATRIX";
+            case MatrixAction::WAITING: return "WAITING";
+            case MatrixAction::LANDING: return "LANDING";
+            default: return "UNKNOWN";
+        }
+    }
+
+    std::string toString(MatrixState s) {
+        switch(s) {
+            case MatrixState::STAGING: return "STAGING";
+            case MatrixState::MISSION_ACTIVE: return "MISSION_ACTIVE";
+            case MatrixState::HOLDING: return "HOLDING";
+            default: return "UNKNOWN";
+        }
+    }
+
     void updateState(MatrixGroup& self, float dt) {
         self.mission_timer += dt;
         

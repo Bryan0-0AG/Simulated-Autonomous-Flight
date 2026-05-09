@@ -11,9 +11,10 @@ namespace Actions {
         self.current_action = States::toInt(States::MatrixAction::FOLLOW_MATRIX);
     }
 
-    void executeWait(MatrixGroup& self, float dt) {
-        // Para esperar, le decimos que vaya a donde ya está
-        self.center = self.center; // redundant, already handled
+    void executeWait(MatrixGroup& self, float dt, const std::vector<DroneChassis>& drones) {
+        // En lugar de esperar en el centro abstracto, frenamos la matriz
+        // poniéndole como centro la posición promedio real de sus drones.
+        self.center = Properties::getAveragePosition(self, drones);
         self.current_action = States::toInt(States::MatrixAction::WAITING);
     }
 

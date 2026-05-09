@@ -1,6 +1,9 @@
 #include "network/bridge.h"
 #include <iostream>
 #include <sstream>
+#include <cstring>
+
+static bool sentBuildings = false;
 
 NetworkBridge::NetworkBridge() : isOrchestratorConnected(false), isViewerConnected(false) {
     viewerSocket.setBlocking(false); // No bloquear el servidor mientras dibuja
@@ -62,6 +65,7 @@ void NetworkBridge::sendPositionsToViewer(const std::vector<DroneChassis>& drone
             std::cout << "[BRIDGE] ¡Cliente visualizador conectado!" << std::endl;
             viewerSocket.setBlocking(false);
             isViewerConnected = true;
+            sentBuildings = false; // Reset so buildings get sent to new client
         }
     }
 
@@ -90,6 +94,35 @@ void NetworkBridge::sendPositionsToViewer(const std::vector<DroneChassis>& drone
             isViewerConnected = false;
         }
     }
+}
+
+void NetworkBridge::sendBuildingsToViewer(const ProceduralCity& city) {
+    if (!isViewerConnected || sentBuildings) return;
+
+    const auto& buildings = city.getBuildings();
+    // Marker: 0xFFFFFFFF signals "this is building data, not drones"
+    uint32_t marker = 0xFFFFFFFF;
+    std::size_t sent = 0;
+    if (viewerSocket.send(&marker, sizeof(marker), sent) != sf::Socket::Status::Done) return;
+
+    // Number of buildings
+    uint32_t count = buildings.size();
+    if (viewerSocket.send(&count, sizeof(count), sent) != sf::Socket::Status::Done) return;
+
+    // Each building: x, y, w, h, type (5 floats)
+    std::vector<float> data;
+    data.reserve(count * 5);
+    for (const auto& b : buildings) {
+        data.push_back(b.bounds.position.x);
+        data.push_back(b.bounds.position.y);
+        data.push_back(b.bounds.size.x);
+        data.push_back(b.bounds.size.y);
+        data.push_back(static_cast<float>(static_cast<int>(b.type)));
+    }
+
+    (void)viewerSocket.send(data.data(), data.size() * sizeof(float), sent);
+    sentBuildings = true;
+    std::cout << "[BRIDGE] Sent " << count << " buildings to viewer." << std::endl;
 }
 
 bool NetworkBridge::connectToCloud(const std::string& ip, unsigned short port) {
