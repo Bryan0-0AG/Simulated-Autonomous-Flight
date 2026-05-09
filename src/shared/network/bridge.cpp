@@ -66,8 +66,16 @@ void NetworkBridge::sendPositionsToViewer(const std::vector<DroneChassis>& drone
     }
 
     // 2. Si hay alguien conectado, enviarle las posiciones
-    if (isViewerConnected) {
-        // Empaquetamos solo X e Y para ahorrar ancho de banda
+    if (isViewerConnected && !drones.empty()) {
+        // Primero enviamos la cantidad de drones
+        uint32_t num_drones = drones.size();
+        std::size_t sent_header = 0;
+        if (viewerSocket.send(&num_drones, sizeof(num_drones), sent_header) == sf::Socket::Status::Disconnected) {
+            isViewerConnected = false;
+            return;
+        }
+
+        // Luego empaquetamos solo X e Y
         std::vector<float> positions;
         positions.reserve(drones.size() * 2);
         for (const auto& d : drones) {
@@ -75,7 +83,7 @@ void NetworkBridge::sendPositionsToViewer(const std::vector<DroneChassis>& drone
             positions.push_back(d.position.y);
         }
 
-        // Enviamos el arreglo en bytes. Pasamos 'sent' para suprimir la advertencia de envío parcial de SFML.
+        // Enviamos el arreglo
         std::size_t sent = 0;
         if (viewerSocket.send(positions.data(), positions.size() * sizeof(float), sent) == sf::Socket::Status::Disconnected) {
             std::cout << "[BRIDGE] Cliente visualizador desconectado." << std::endl;
@@ -103,27 +111,69 @@ bool NetworkBridge::connectToCloud(const std::string& ip, unsigned short port) {
 bool NetworkBridge::receivePositions(std::vector<DroneChassis>& drones) {
     if (!isViewerConnected) return false;
 
-    // Si el cliente acaba de arrancar, su vector de drones estara vacio
-    if (drones.empty()) {
-        drones.resize(10000); // 10k MAX
+    // Usamos variables estáticas para acumular el estado del frame incompleto
+    static uint32_t expected_drones = 0;
+    static std::vector<float> receive_buffer;
+    static std::size_t total_received_bytes = 0;
+
+    // Fase 1: Leer el encabezado (cantidad de drones) si no estamos a mitad de un frame
+    if (expected_drones == 0) {
+        std::size_t received_header = 0;
+        sf::Socket::Status status = viewerSocket.receive(&expected_drones, sizeof(expected_drones), received_header);
+        
+        if (status == sf::Socket::Status::Disconnected) {
+            isViewerConnected = false;
+            std::cout << "[BRIDGE] Desconectado de la nube." << std::endl;
+            return false;
+        }
+        
+        // Si no hay datos, salimos y esperamos al siguiente frame
+        if (status != sf::Socket::Status::Done || received_header != sizeof(expected_drones)) {
+            expected_drones = 0; 
+            return false;
+        }
+
+        // Preparamos el buffer para el nuevo frame
+        receive_buffer.resize(expected_drones * 2);
+        total_received_bytes = 0;
     }
 
-    std::vector<float> buffer(drones.size() * 2);
-    std::size_t received;
-    
-    sf::Socket::Status status = viewerSocket.receive(buffer.data(), buffer.size() * sizeof(float), received);
-    
-    if (status == sf::Socket::Status::Done && received > 0) {
-        std::size_t count = received / (2 * sizeof(float));
-        for (std::size_t i = 0; i < count && i < drones.size(); ++i) {
-            drones[i].position.x = buffer[i * 2];
-            drones[i].position.y = buffer[(i * 2) + 1];
+    // Fase 2: Leer el cuerpo (posiciones)
+    if (expected_drones > 0) {
+        std::size_t bytes_to_receive = (expected_drones * 2 * sizeof(float)) - total_received_bytes;
+        std::size_t received = 0;
+        
+        // Recibimos directamente en la parte del buffer que falta
+        char* dest = reinterpret_cast<char*>(receive_buffer.data()) + total_received_bytes;
+        sf::Socket::Status status = viewerSocket.receive(dest, bytes_to_receive, received);
+
+        if (status == sf::Socket::Status::Disconnected) {
+            isViewerConnected = false;
+            expected_drones = 0;
+            return false;
         }
-        return true;
-    } else if (status == sf::Socket::Status::Disconnected) {
-        isViewerConnected = false;
-        std::cout << "[BRIDGE] Desconectado de la nube." << std::endl;
+
+        total_received_bytes += received;
+
+        // Si ya completamos el frame
+        if (total_received_bytes == expected_drones * 2 * sizeof(float)) {
+            // Actualizamos el tamaño del vector real de drones (así no dibujamos drones fantasmas)
+            if (drones.size() != expected_drones) {
+                drones.resize(expected_drones);
+            }
+            
+            // Asignamos las coordenadas
+            for (std::size_t i = 0; i < expected_drones; ++i) {
+                drones[i].position.x = receive_buffer[i * 2];
+                drones[i].position.y = receive_buffer[(i * 2) + 1];
+            }
+            
+            // Reseteamos para el próximo frame
+            expected_drones = 0;
+            return true;
+        }
     }
+    
     return false;
 }
 
