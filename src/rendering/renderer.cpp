@@ -8,7 +8,7 @@
 // The constructor initializes the window.
 Renderer::Renderer(Vector2 windowSize)
     : window(sf::VideoMode({(unsigned int)windowSize.x, (unsigned int)windowSize.y}), "Flight Simulation"),
-      camera(windowSize),
+      cam(windowSize),
       windowSize(windowSize)
 {
     window.setFramerateLimit(60); 
@@ -39,7 +39,7 @@ void Renderer::handleEvents() {
         }
         
         // Pass the event to the camera for manual control
-        camera.handleEvent(*event, window);
+        cam.handleEvent(*event, window);
     }
 }
 
@@ -51,11 +51,11 @@ void Renderer::clear(float totalTime) {
     window.draw(backgroundRect, &shader);
 
     // Activate camera for drones and world (from the modular camera object)
-    window.setView(camera.getView());
+    window.setView(cam.getView());
 }
 
 void Renderer::updateCamera(const std::vector<DroneChassis>& drones) {
-    camera.update(drones);
+    cam.update(drones);
 }
 
 void Renderer::display() {
