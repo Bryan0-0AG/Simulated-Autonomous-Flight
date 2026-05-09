@@ -1,5 +1,5 @@
 CXX      = g++
-HIPCC    = hipcc
+HIPCC    = /opt/rocm/bin/hipcc
 OUT_SERVER = app_server
 OUT_CLIENT = app_client
 
