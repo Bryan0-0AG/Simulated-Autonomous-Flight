@@ -1,8 +1,8 @@
 #ifndef SWARM_DYNAMICS_H
 #define SWARM_DYNAMICS_H
 
-#include "../utils/vector2.h"
-#include "../AI/states.h"
+#include "utils/vector2.h"
+#include "AI/states.h"
 
 // 1. Shared structures between CPU and GPU
 struct PIDOutput {

@@ -1,7 +1,7 @@
 #ifndef MATRIX_GROUP_H
 #define MATRIX_GROUP_H
 
-#include "../../utils/vector2.h"
+#include "utils/vector2.h"
 #include <cmath>
 #include <vector>
 

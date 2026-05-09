@@ -24,12 +24,11 @@ float noise(vec2 p) {
                    hash(i + vec2(1.0, 1.0)), u.x), u.y);
 }
 
-// Fractal Brownian Motion for layered detail
+// Fractal Brownian Motion for layered cloud detail
 float fbm(vec2 p) {
     float v = 0.0;
     float a = 0.5;
     vec2 shift = vec2(100.0);
-    // Rotating noise to avoid directional artifacts
     mat2 rot = mat2(cos(0.5), sin(0.5), -sin(0.5), cos(0.5));
     for (int i = 0; i < 5; ++i) {
         v += a * noise(p);
@@ -46,8 +45,8 @@ void main() {
     // Wind Directional UV: Stretched on X to create "streaks"
     vec2 st = uv * vec2(aspect * 2.0, 8.0);
     
-    // Domain Warping: Offset UVs by noise to create organic flow/turbulence
-    float time = u_time * 0.5;
+    // Domain Warping: Offset UVs by noise to create organic cloud flow
+    float time = u_time * 0.3;
     vec2 q = vec2(0.0);
     q.x = fbm(st + vec2(time, time * 0.2));
     q.y = fbm(st + vec2(1.0));
@@ -58,21 +57,29 @@ void main() {
 
     float f = fbm(st + r);
 
-    // Color Palette
-    vec3 backgroundColor = vec3(0.02, 0.04, 0.08); // Deep Navy
-    vec3 windColor1 = vec3(0.1, 0.3, 0.5);      // Mid Blue
-    vec3 windColor2 = vec3(0.4, 0.7, 0.9);      // Light Cyan
-    
-    // Mix colors based on noise results
-    vec3 color = mix(backgroundColor, windColor1, clamp(f * f * 4.0, 0.0, 1.0));
-    color = mix(color, windColor2, clamp(length(q), 0.0, 1.0) * 0.4);
-    
-    // Add "Air Streaks" - high frequency detail moving fast
-    float streaks = pow(noise(st * vec2(0.5, 20.0) + vec2(u_time * 4.0, 0.0)), 12.0);
-    color += vec3(0.5, 0.8, 1.0) * streaks * 0.3;
+    // Daytime Sky Color Palette
+    vec3 skyHigh    = vec3(0.30, 0.55, 0.92); // Clear blue sky
+    vec3 skyLow     = vec3(0.55, 0.75, 0.95); // Light horizon blue
+    vec3 cloudWhite = vec3(0.95, 0.97, 1.00); // Bright cloud white
+    vec3 cloudGrey  = vec3(0.70, 0.75, 0.82); // Cloud shadow tint
 
-    // Vignette/Depth effect
-    float vignette = 1.0 - length(uv - 0.5) * 0.8;
+    // Vertical gradient: brighter near bottom (horizon), deeper blue at top
+    vec3 skyBase = mix(skyLow, skyHigh, uv.y * 0.8);
+    
+    // Layer clouds using noise
+    vec3 color = mix(skyBase, cloudGrey, clamp(f * f * 3.0, 0.0, 0.6));
+    color = mix(color, cloudWhite, clamp(length(q) * 0.5, 0.0, 0.4));
+    
+    // Bright cloud highlights drifting across the sky
+    float streaks = pow(noise(st * vec2(0.5, 20.0) + vec2(u_time * 3.0, 0.0)), 10.0);
+    color += vec3(1.0, 1.0, 1.0) * streaks * 0.25;
+
+    // Subtle sun glow from upper-right corner
+    float sunDist = length(uv - vec2(0.85, 0.9));
+    color += vec3(1.0, 0.95, 0.8) * max(0.0, 0.15 - sunDist) * 2.0;
+
+    // Softer vignette for daytime (less darkening at edges)
+    float vignette = 1.0 - length(uv - 0.5) * 0.3;
     color *= vignette;
 
     fragColor = vec4(color, 1.0);

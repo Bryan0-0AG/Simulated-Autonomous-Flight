@@ -177,7 +177,7 @@ extern "C" void launch_physics_kernel(DroneChassis* cpu_drones, int n, float dt,
         return;
     }
     
-    hipMemcpy(gpu_drones, cpu_drones, size, hipMemcpyHostToDevice);
+    (void)hipMemcpy(gpu_drones, cpu_drones, size, hipMemcpyHostToDevice);
 
     int blockSize = 256;
     int gridSize = (n + blockSize - 1) / blockSize;
@@ -191,9 +191,9 @@ extern "C" void launch_physics_kernel(DroneChassis* cpu_drones, int n, float dt,
         printf("\n[CRITICAL GPU ERROR] Kernel Fail: %s\n", hipGetErrorString(err));
     }
 
-    hipDeviceSynchronize();
-    hipMemcpy(cpu_drones, gpu_drones, size, hipMemcpyDeviceToHost);
-    hipFree(gpu_drones);
+    (void)hipDeviceSynchronize();
+    (void)hipMemcpy(cpu_drones, gpu_drones, size, hipMemcpyDeviceToHost);
+    (void)hipFree(gpu_drones);
 }
 
 #ifdef _WIN32

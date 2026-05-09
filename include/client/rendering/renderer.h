@@ -31,7 +31,7 @@ public:
     
 private:
     sf::RenderWindow window;
-    camera camera;
+    camera cam;
     sf::CircleShape shape;
     Vector2 windowSize;
 

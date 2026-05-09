@@ -8,13 +8,13 @@
 // The constructor initializes the window.
 Renderer::Renderer(Vector2 windowSize)
     : window(sf::VideoMode({(unsigned int)windowSize.x, (unsigned int)windowSize.y}), "Flight Simulation"),
-      camera(windowSize),
+      cam(windowSize),
       windowSize(windowSize)
 {
     window.setFramerateLimit(60); 
     
     // 1. Load the GPU program (Shader)
-    if (!shader.loadFromFile("assets/shaders/entorno.frag", sf::Shader::Type::Fragment)) {
+    if (!shader.loadFromFile("src/client/rendering/entorno.frag", sf::Shader::Type::Fragment)) {
         // If it fails, SFML will print an error in the console
     }
 
@@ -39,7 +39,7 @@ void Renderer::handleEvents() {
         }
         
         // Pass the event to the camera for manual control
-        camera.handleEvent(*event, window);
+        cam.handleEvent(*event, window);
     }
 }
 
@@ -51,11 +51,11 @@ void Renderer::clear(float totalTime) {
     window.draw(backgroundRect, &shader);
 
     // Activate camera for drones and world (from the modular camera object)
-    window.setView(camera.getView());
+    window.setView(cam.getView());
 }
 
 void Renderer::updateCamera(const std::vector<DroneChassis>& drones) {
-    camera.update(drones);
+    cam.update(drones);
 }
 
 void Renderer::display() {
@@ -151,14 +151,26 @@ void Renderer::drawSwarm(const std::vector<DroneChassis>& drones) {
         
         // Color by battery for each drone        
         for(int j = 0; j < 6; ++j) {
-            // Battery color: Green (100%) to Red (0%)
-            float battery_pct = b.battery / b.max_battery;
-            if (battery_pct < 0.0f) battery_pct = 0.0f;
-            if (battery_pct > 1.0f) battery_pct = 1.0f;
+            float bp = b.battery / b.max_battery;
+            if (bp < 0.0f) bp = 0.0f;
+            if (bp > 1.0f) bp = 1.0f;
             
-            swarm[idx + j].color.r = static_cast<uint8_t>(255.0f * (1.0f - battery_pct)); // R
-            swarm[idx + j].color.g = static_cast<uint8_t>(255.0f * battery_pct);          // G
-            swarm[idx + j].color.b = 0;                                                   // B
+            uint8_t cr, cg, cb;
+            if (bp > 0.5f) {
+                // Upper half: navy blue -> orange
+                float t = (bp - 0.5f) * 2.0f; // 1.0 at full, 0.0 at half
+                cr = static_cast<uint8_t>(220.0f - t * 200.0f); // 220 -> 20
+                cg = static_cast<uint8_t>(120.0f - t * 90.0f);  // 120 -> 30
+                cb = static_cast<uint8_t>(20.0f  + t * 60.0f);  //  20 -> 80
+            } else {
+                // Lower half: orange -> dark red
+                float t = bp * 2.0f; // 1.0 at half, 0.0 at empty
+                cr = static_cast<uint8_t>(180.0f + t * 40.0f);  // 180 -> 220
+                cg = static_cast<uint8_t>(20.0f  + t * 100.0f); //  20 -> 120
+                cb = static_cast<uint8_t>(20.0f);                //  20 -> 20
+            }
+            
+            swarm[idx + j].color = sf::Color(cr, cg, cb);
         }
     }
     
