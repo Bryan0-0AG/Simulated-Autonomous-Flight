@@ -16,8 +16,8 @@ void triggerLabMission(SwarmManager* swarm, ProceduralCity* city) {
         // Spawnea los drones cerca de la posicion inicial
         info.startPos.y += 1000.0f;
         size_t initial_matrix_count = swarm->getMatrixGroups().size();
-        
-        MissionOrchestrator::initiateDeployment(*city, info.startPos, info.pendingPackages, 5, swarm->getMatrixGroups(), swarm->getActiveSpawnPlans());
+        // Iniciar la misión usando el puente central SwarmManager
+        swarm->startMission(*city, info.startPos, info.pendingPackages, 5);
         
         // Asigna el target (endPos) como final_target a todas las matrices que se acaban de crear
         info.endPos.y += 1000.0f;

@@ -18,11 +18,6 @@ enum class DroneState {
     EMERGENCY
 };
 
-enum class MatrixAction {
-    STAGING,
-    MISSION_ACTIVE,
-    HOLDING
-};
 
 std::string toString(DroneAction a);
 std::string toString(DroneState s);

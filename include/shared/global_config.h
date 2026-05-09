@@ -36,6 +36,11 @@ constexpr float FORMATION_SPACING_Y = 35.0f;
 constexpr float MATRIX_ERROR_TOLERANCE = 10.0f;
 constexpr float MATRIX_AI_INTERVALE = 5.0f;
 
+// Highways
+constexpr float HIGHWAY_WIDTH = 200.0f;
+constexpr float HIGHWAY_Y_OUTBOUND = 300.0f; // Carril de ida
+constexpr float HIGHWAY_Y_INBOUND = 500.0f;  // Carril de vuelta
+
 // ==============================
 // CITY GENERATION
 // ==============================
@@ -91,6 +96,7 @@ constexpr float MIN_ANGLE  = -0.5f;
 // ==============================
 constexpr float BATTERY_DRAIN = 0.5f;
 constexpr float BATTERY_CHARGE_SPEED = 2.0f;
+constexpr int LLM_QUERY_INTERVAL = 120;
 
 // ==============================
 // NETWORK
@@ -99,8 +105,9 @@ const std::string SERVER_IP = "134.199.196.239";
 const unsigned short SERVER_PORT = 9999;
 
 // ==============================
-// AI
+// DEPLOYMENT
 // ==============================
-constexpr int LLM_QUERY_INTERVAL = 120;
+constexpr int PACKAGE_MIN_COUNT = 50;
+constexpr int PACKAGE_MAX_COUNT = 150;
 
 #endif // GLOBAL_CONFIG_H

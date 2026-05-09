@@ -3,7 +3,7 @@
 
 #include <SFML/Graphics.hpp>
 #include <vector>
-#include "swarm/swarm_dynamics.h"
+#include "drone_dynamics.h"
 #include "utils/vector2.h"
 
 class camera {

@@ -33,16 +33,24 @@ endif
 # BLOCK 1: C++ / CPU (Core Sources)
 # ==========================================
 CORE_SOURCES = src/server/swarm/swarm_manager.cpp \
-          src/server/swarm/spawn_logic/matrix_group.cpp \
-          src/server/swarm/spawn_logic/mission_orchestrator.cpp \
+          src/server/AI/matrix/matrix_group.cpp \
+          src/server/missions/mission_orchestrator.cpp \
+          src/server/missions/mission_calculator.cpp \
+          src/server/swarm/spawners/matrix_spawner.cpp \
+          src/server/swarm/spawners/drone_spawner.cpp \
           src/core/SimulationEngine.cpp \
           src/shared/utils/math_utils.cpp \
           src/shared/world/world.cpp \
           src/client/rendering/renderer.cpp \
           src/client/rendering/camera.cpp \
           src/server/AI/drone_ai.cpp \
-          src/server/AI/states.cpp \
-          src/server/AI/matrix_ai.cpp \
+          src/server/AI/drone_states.cpp \
+          src/server/AI/matrix/properties.cpp \
+          src/server/AI/matrix/perceptions.cpp \
+          src/server/AI/matrix/decisions.cpp \
+          src/server/AI/matrix/actions.cpp \
+          src/server/AI/matrix/states.cpp \
+          src/server/AI/matrix/highways.cpp \
           src/shared/network/bridge.cpp \
           src/shared/world/procedural_city.cpp \
           src/server/lab.cpp
@@ -50,8 +58,8 @@ CORE_SOURCES = src/server/swarm/swarm_manager.cpp \
 # ==========================================
 # BLOCK 2: AMD / GPU (Kernels)
 # ==========================================
-HIP_SRC = src/server/swarm/swarm_dynamics.hip
-HIP_OBJ = build/swarm_dynamics.o
+HIP_SRC = src/server/drone_dynamics.hip
+HIP_OBJ = build/drone_dynamics.o
 
 # Dependencies (Using a general wildcard for simplicity now that it's spread out)
 HEADERS = $(wildcard include/**/*.h)

@@ -2,13 +2,13 @@
 #define SWARM_MANAGER_H
 
 #include <vector>
-#include "swarm/swarm_dynamics.h"
-#include "swarm/spawn_logic/matrix_group.h"
-#include "swarm/spawn_logic/deployment_calculator.h"
-#include "swarm/spawn_logic/mission_orchestrator.h"
+#include "drone_dynamics.h"
+#include "AI/matrix/matrix_group.h"
+#include "missions/mission_calculator.h"
+#include "missions/mission_orchestrator.h"
 #include "world/procedural_city.h"
 #include "world/world.h"
-#include "AI/states.h"
+#include "AI/drone_states.h"
 
 struct SwarmStats {
     int active_drones;
@@ -33,15 +33,17 @@ public:
     const std::vector<DroneChassis>& getDrones() const { return drones; }
     std::vector<DroneChassis>& getDronesRef() { return drones; }
     std::vector<MatrixGroup>& getMatrixGroups() { return matrix_groups; }
-    std::vector<SpawnBuilding>& getActiveSpawnPlans() { return active_spawn_plans; }
+    std::vector<DeploymentPlan>& getActiveSpawnPlans() { return active_spawn_plans; }
     SwarmStats getStats() const;
+
+    // El puente que une todo
+    void startMission(const ProceduralCity& city, Vector2 missionTarget, int droneCount, int buildingCount);
 
 private:
     std::vector<DroneChassis> drones;
     std::vector<MatrixGroup> matrix_groups;
-    std::vector<SpawnBuilding> active_spawn_plans;
+    std::vector<DeploymentPlan> active_spawn_plans;
     
-    void deploySwarmOnBuilding(const Building& b, MatrixGroup& matrix, int startIdx, int count);
     void runAI(const world& vWorld, const ProceduralCity& city);
     void processSpawning(float dt, const ProceduralCity& city);
     

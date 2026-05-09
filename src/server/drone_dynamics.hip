@@ -2,7 +2,7 @@
 #include <math.h>
 #include "global_config.h"
 #include "utils/vector2.h"
-#include "swarm/swarm_dynamics.h"
+#include "drone_dynamics.h"
 __host__ __device__ float sq(float base){
     return base * base;
 }
@@ -158,7 +158,7 @@ __global__ void massiveCompute_DRONES(
 }
 
 // 3. HOST FUNCTION
-extern "C" void launch_physics_kernel(DroneChassis* cpu_drones, int n, float dt, const GPUObstacle* obstacles, int num_obstacles) {
+extern "C" void launch_physics_kernel(DroneChassis* cpu_drones, int n, float dt) {
     DroneChassis* gpu_drones;
     size_t size = n * sizeof(DroneChassis);
 

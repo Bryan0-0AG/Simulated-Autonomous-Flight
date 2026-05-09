@@ -2,7 +2,7 @@
 #define SWARM_DYNAMICS_H
 
 #include "utils/vector2.h"
-#include "AI/states.h"
+#include "AI/drone_states.h"
 
 // 1. Shared structures between CPU and GPU
 struct PIDOutput {
@@ -60,7 +60,7 @@ struct GPUObstacle {
 extern "C" {
 #endif
 
-void launch_physics_kernel(DroneChassis* drones, int n, float dt, const GPUObstacle* obstacles, int num_obstacles);
+void launch_physics_kernel(DroneChassis* drones, int n, float dt);
 
 #ifdef __cplusplus
 }

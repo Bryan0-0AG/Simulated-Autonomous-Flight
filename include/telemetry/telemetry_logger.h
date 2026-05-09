@@ -9,8 +9,8 @@
 #include <iomanip>
 
 #include "global_config.h"
-#include "AI/states.h"
-#include "swarm/swarm_dynamics.h"
+#include "AI/drone_states.h"
+#include "drone_dynamics.h"
 
 class TelemetryLogger {
 private:

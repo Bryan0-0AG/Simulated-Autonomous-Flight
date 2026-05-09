@@ -1,7 +1,7 @@
 #ifndef DRONE_AI_H
 #define DRONE_AI_H
 
-#include "swarm/swarm_dynamics.h"
+#include "drone_dynamics.h"
 #include "world/world.h"
 #include "world/procedural_city.h"
 

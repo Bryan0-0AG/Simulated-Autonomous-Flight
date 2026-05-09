@@ -2,7 +2,7 @@
 #define RENDERER_H
 
 #include <SFML/Graphics.hpp>
-#include "swarm/swarm_dynamics.h"
+#include "drone_dynamics.h"
 #include "utils/vector2.h"
 #include "rendering/camera.h"
 

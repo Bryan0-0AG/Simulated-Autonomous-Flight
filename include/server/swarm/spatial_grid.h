@@ -4,7 +4,7 @@
 #include <vector>
 #include <cmath>
 #include "utils/vector2.h"
-#include "swarm/swarm_dynamics.h"
+#include "drone_dynamics.h"
 
 class SpatialGrid {
 public:

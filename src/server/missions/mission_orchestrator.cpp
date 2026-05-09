@@ -1,49 +1,33 @@
-#include "swarm/spawn_logic/mission_orchestrator.h"
+#include "missions/mission_orchestrator.h"
 #include "global_config.h"
 #include <iostream>
 
-void MissionOrchestrator::initiateDeployment(
+std::vector<DeploymentPlan> MissionOrchestrator::createDeploymentPlans(
     const ProceduralCity& city, 
     Vector2 missionTarget, 
     int droneCount, 
-    int buildingCount,
-    std::vector<MatrixGroup>& matrix_groups,
-    std::vector<SpawnBuilding>& active_spawn_plans) 
+    int buildingCount) 
 {
-    // 1. Obtener candidatos usando el Calculator (auxiliars)
-    std::vector<int> selectedIndices = DeploymentCalculator::findBestSpawnBuildings(city, missionTarget, buildingCount);
-    if (selectedIndices.empty()) return;
+    std::vector<DeploymentPlan> plans;
+    
+    // 1. Obtener candidatos usando el Calculator
+    std::vector<int> selectedIndices = MissionCalculator::findBestSpawnBuildings(city, missionTarget, buildingCount);
+    if (selectedIndices.empty()) return plans;
 
     int drones_per_building = droneCount / (int)selectedIndices.size();
     const auto& buildings = city.getBuildings();
 
-    // 2. Crear unidades de despliegue
+    // 2. Crear unidades de despliegue lógicas
     for (int b_idx : selectedIndices) {
-        createDeploymentUnit(buildings[b_idx], b_idx, drones_per_building, matrix_groups, active_spawn_plans);
+        auto dims = MissionCalculator::calculateOptimalDimensions(buildings[b_idx], drones_per_building);
+        
+        plans.push_back({
+            b_idx, 0, dims.batchSize, (dims.rows * dims.cols + dims.batchSize - 1) / dims.batchSize, 0.0f, dims.rows * dims.cols, 0
+        });
     }
 
-    std::cout << "[ORCHESTRATOR] Mission started: " << droneCount << " drones across " << selectedIndices.size() << " buildings." << std::endl;
-}
-
-void MissionOrchestrator::createDeploymentUnit(
-    const Building& b, 
-    int b_idx, 
-    int dronesForBuilding, 
-    std::vector<MatrixGroup>& matrix_groups,
-    std::vector<SpawnBuilding>& active_spawn_plans)
-{
-    // Usar Calculator para las dimensiones
-    auto dims = DeploymentCalculator::calculateOptimalDimensions(b, dronesForBuilding);
-    
-    Vector2 spawnTarget = { b.bounds.position.x + b.bounds.size.x / 2, 1500.0f };
-    int matrix_id = (int)matrix_groups.size();
-    
-    matrix_groups.emplace_back(matrix_id, spawnTarget, dims.cols, FORMATION_SPACING_X, dims.rows, FORMATION_SPACING_Y);
-    matrix_groups.back().target_count = dronesForBuilding;
-    
-    active_spawn_plans.push_back({
-        b_idx, 0, dims.batchSize, (dims.rows * dims.cols + dims.batchSize - 1) / dims.batchSize, 0.0f, dims.rows * dims.cols, 0
-    });
+    std::cout << "[ORCHESTRATOR] Mission Order created: " << droneCount << " drones across " << selectedIndices.size() << " buildings." << std::endl;
+    return plans;
 }
 
 TransportMissionInfo MissionOrchestrator::startTransportMission(ProceduralCity& city) {
@@ -73,7 +57,7 @@ TransportMissionInfo MissionOrchestrator::startTransportMission(ProceduralCity& 
     
     // 4. Setup state to visually link them
     buildings[c_idx].is_mission_active = true;
-    buildings[c_idx].pending_packages = 50 + (std::rand() % 100); // 50 to 150 packages
+    buildings[c_idx].pending_packages = PACKAGE_MIN_COUNT + (std::rand() % (PACKAGE_MAX_COUNT - PACKAGE_MIN_COUNT + 1));
     buildings[c_idx].target_building_idx = d_idx;
     
     buildings[d_idx].is_mission_active = true; // Also mark the deploy building as active so it highlights
