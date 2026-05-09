@@ -5,11 +5,17 @@
 #include "lab.h"
 #include <iostream>
 
-SimulationEngine::SimulationEngine() 
-    : total_time(0.0f), last_brain_update(0.0f), accumulator(0.0f), seconds_passed(0) {
+SimulationEngine::SimulationEngine(EngineMode mode) 
+    : currentMode(mode), total_time(0.0f), last_brain_update(0.0f), accumulator(0.0f), seconds_passed(0) {
     
     virtualWorld = new world(WINDOW_SIZE);
-    renderer     = new Renderer(WINDOW_SIZE);
+    
+    if (currentMode != EngineMode::SERVER) {
+        renderer = new Renderer(WINDOW_SIZE);
+    } else {
+        renderer = nullptr;
+    }
+    
     logger       = new TelemetryLogger();
     bridge       = new NetworkBridge();
     swarm        = new SwarmManager(WINDOW_SIZE);
@@ -18,7 +24,7 @@ SimulationEngine::SimulationEngine()
 
 SimulationEngine::~SimulationEngine() {
     delete virtualWorld;
-    delete renderer;
+    if (renderer) delete renderer;
     delete logger;
     delete bridge;
     delete swarm;
@@ -26,40 +32,67 @@ SimulationEngine::~SimulationEngine() {
 }
 
 void SimulationEngine::init() {
-    std::cout << "[ENGINE] Initializing Systems..." << std::endl;
+    std::cout << "[ENGINE] Initializing Systems... Mode: " << (int)currentMode << std::endl;
     city->generate(static_cast<unsigned int>(std::time(nullptr)));
-    bridge->connect(SERVER_IP, SERVER_PORT);
 
-    // Llamar al lab para iniciar la misión
-    triggerLabMission(swarm, city);
+    if (currentMode == EngineMode::SERVER || currentMode == EngineMode::LOCAL) {
+        bridge->connect(SERVER_IP, SERVER_PORT); // Conectar al Orquestador Python
+        
+        if (currentMode == EngineMode::SERVER) {
+            bridge->startVisualizerServer(9998); // Abrir puerto para que el Visor se conecte
+        }
+
+        triggerLabMission(swarm, city);
+    } else if (currentMode == EngineMode::CLIENT) {
+        std::cout << "[ENGINE] Connecting to Cloud Simulator at " << SERVER_IP << "..." << std::endl;
+        bridge->connectToCloud(SERVER_IP, 9998);
+    }
 }
 
 void SimulationEngine::run() {
     std::cout << "[ENGINE] Starting Main Loop..." << std::endl;
 
-    while (renderer->isOpen()) {
+    while (currentMode == EngineMode::SERVER || (renderer && renderer->isOpen())) {
         float frameTime = clock.restart().asSeconds();
         total_time += frameTime;
 
-        // 1. Events
-        renderer->handleEvents();
+        // 1. Events (Solo en Cliente/Local)
+        if (currentMode != EngineMode::SERVER && renderer) {
+            renderer->handleEvents();
+        }
 
-        // 2. Update Swarm (Physics & AI)
-        swarm->update(DT * TIME_SCALE, *virtualWorld, *city);
+        // 2. Lógica del Enjambre o Recepción de Red
+        if (currentMode == EngineMode::SERVER || currentMode == EngineMode::LOCAL) {
+            swarm->update(DT * TIME_SCALE, *virtualWorld, *city);
+            
+            if (currentMode == EngineMode::SERVER) {
+                bridge->sendPositionsToViewer(swarm->getDrones());
+            }
+        } else if (currentMode == EngineMode::CLIENT) {
+            // El cliente no simula fisicas, solo recibe posiciones
+            bridge->receivePositions(swarm->getDronesRef());
+        }
 
-        // 3. Render
-        render();
+        // 3. Render (Solo en Cliente/Local)
+        if (currentMode != EngineMode::SERVER) {
+            render();
+        }
 
         // 4. Logic Per Second (Telemetry & Spawning)
         accumulator += frameTime;
         if (accumulator >= 1.0f) {
-            handleLogicPerSecond();
+            if (currentMode == EngineMode::SERVER || currentMode == EngineMode::LOCAL) {
+                handleLogicPerSecond();
+            } else {
+                std::cout << "Viewer frame: Rendering " << swarm->getDrones().size() << " drones." << std::endl;
+            }
             accumulator -= 1.0f;
         }
     }
 }
 
 void SimulationEngine::render() {
+    if (!renderer) return;
     renderer->clear(total_time);
     renderer->drawCity(*city);
     renderer->drawWorld(*virtualWorld);

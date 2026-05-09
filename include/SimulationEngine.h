@@ -9,9 +9,11 @@
 #include "telemetry/telemetry_logger.h"
 #include "network/bridge.h"
 
+enum class EngineMode { SERVER, CLIENT, LOCAL };
+
 class SimulationEngine {
 public:
-    SimulationEngine();
+    SimulationEngine(EngineMode mode = EngineMode::LOCAL);
     ~SimulationEngine();
 
     void init();
@@ -25,6 +27,8 @@ private:
     NetworkBridge* bridge;
     SwarmManager* swarm;
     ProceduralCity* city;
+
+    EngineMode currentMode;
 
     // State
     sf::Clock clock;

@@ -3,7 +3,8 @@
 # ==========================================
 CXX      = g++
 HIPCC    = hipcc
-OUT      = app
+OUT_SERVER = app_server
+OUT_CLIENT = app_client
 
 # AMD ROCm Paths (Windows)
 AMD_PATH = C:/Program Files/AMD/ROCm/7.1
@@ -16,10 +17,9 @@ HIPFLAGS = -g
 LIBS     = -lsfml-graphics -lsfml-window -lsfml-system -lsfml-network $(AMD_LIB)
 
 # ==========================================
-# BLOCK 1: C++ / CPU (Source Files)
+# BLOCK 1: C++ / CPU (Core Sources)
 # ==========================================
-SOURCES = src/main.cpp \
-          src/swarm/swarm_manager.cpp \
+CORE_SOURCES = src/swarm/swarm_manager.cpp \
           src/swarm/spawn_logic/matrix_group.cpp \
           src/swarm/spawn_logic/mission_orchestrator.cpp \
           src/SimulationEngine.cpp \
@@ -51,9 +51,15 @@ HEADERS = include/global_config.h \
 # ==========================================
 # BUILD RULES
 # ==========================================
-all: build_dir $(HIP_OBJ)
-	@echo "[BUILD] Compiling complete system with g++..."
-	$(CXX) $(CXXFLAGS) $(SOURCES) $(HIP_OBJ) -o $(OUT) $(LIBS)
+all: server client
+
+server: build_dir $(HIP_OBJ)
+	@echo "[BUILD] Compiling Server..."
+	$(CXX) $(CXXFLAGS) src/main_server.cpp $(CORE_SOURCES) $(HIP_OBJ) -o $(OUT_SERVER) $(LIBS)
+
+client: build_dir $(HIP_OBJ)
+	@echo "[BUILD] Compiling Client..."
+	$(CXX) $(CXXFLAGS) src/main_client.cpp $(CORE_SOURCES) $(HIP_OBJ) -o $(OUT_CLIENT) $(LIBS)
 
 $(HIP_OBJ): $(HIP_SRC) $(HEADERS)
 	@echo "[AMD] Compiling GPU Kernels..."
@@ -64,7 +70,7 @@ build_dir:
 
 clean:
 	@rm -rf build
-	@rm -f $(OUT) $(OUT).exe
+	@rm -f $(OUT_SERVER) $(OUT_SERVER).exe $(OUT_CLIENT) $(OUT_CLIENT).exe
 
 run: all
 	py ai_commander/brain.py

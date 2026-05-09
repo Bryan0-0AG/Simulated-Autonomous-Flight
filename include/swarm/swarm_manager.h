@@ -31,6 +31,7 @@ public:
     
     // Getters para renderizado y telemetría
     const std::vector<DroneChassis>& getDrones() const { return drones; }
+    std::vector<DroneChassis>& getDronesRef() { return drones; }
     std::vector<MatrixGroup>& getMatrixGroups() { return matrix_groups; }
     std::vector<SpawnBuilding>& getActiveSpawnPlans() { return active_spawn_plans; }
     SwarmStats getStats() const;

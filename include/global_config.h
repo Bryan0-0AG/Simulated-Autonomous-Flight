@@ -7,6 +7,9 @@
 // ==============================
 // WORLD & SIMULATION
 // ==============================
+constexpr bool HEADLESS_MODE = true; // Servidor Nube: Si es true, calcula físicas pero NO dibuja nada.
+constexpr bool VIEWER_MODE = false;  // Cliente PC: Si es true, NO calcula físicas, solo recibe datos y dibuja.
+
 constexpr Vector2 WINDOW_SIZE = {1280.0f, 720.0f};      
 constexpr Vector2 WORLD_SIZE  = {100000.0f, 100000.0f}; 
 constexpr float DT = 0.016f;
