@@ -8,8 +8,8 @@ AMD_INC  = -I/opt/rocm/include
 AMD_LIB  = -L/opt/rocm/lib -lamdhip64
 
 # Flags and Libraries (Linux SFML)
-CXXFLAGS = -Wall -std=c++17 -Iinclude -Isrc $(AMD_INC)
-HIPFLAGS = -g
+CXXFLAGS = -Wall -std=c++17 -fPIC -Iinclude -Isrc $(AMD_INC)
+HIPFLAGS = -g -fPIC
 LIBS     = -lsfml-graphics -lsfml-window -lsfml-system -lsfml-network $(AMD_LIB)
 
 # ==========================================
