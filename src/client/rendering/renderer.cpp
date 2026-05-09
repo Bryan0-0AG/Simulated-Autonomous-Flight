@@ -14,7 +14,7 @@ Renderer::Renderer(Vector2 windowSize)
     window.setFramerateLimit(60); 
     
     // 1. Load the GPU program (Shader)
-    if (!shader.loadFromFile("assets/shaders/entorno.frag", sf::Shader::Type::Fragment)) {
+    if (!shader.loadFromFile("entorno.frag", sf::Shader::Type::Fragment)) {
         // If it fails, SFML will print an error in the console
     }
 

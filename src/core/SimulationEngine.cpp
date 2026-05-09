@@ -45,7 +45,10 @@ void SimulationEngine::init() {
         triggerLabMission(swarm, city);
     } else if (currentMode == EngineMode::CLIENT) {
         std::cout << "[ENGINE] Connecting to Cloud Simulator at " << SERVER_IP << "..." << std::endl;
-        bridge->connectToCloud(SERVER_IP, 9998);
+        while (!bridge->connectToCloud(SERVER_IP, 9998)) {
+            std::cout << "[ENGINE] Retrying in 2 seconds..." << std::endl;
+            sf::sleep(sf::seconds(2.0f));
+        }
     }
 }
 
@@ -53,6 +56,14 @@ void SimulationEngine::run() {
     std::cout << "[ENGINE] Starting Main Loop..." << std::endl;
 
     while (currentMode == EngineMode::SERVER || (renderer && renderer->isOpen())) {
+        // [NUBE] Limitar la velocidad del servidor a 60 Ticks Per Second
+        if (currentMode == EngineMode::SERVER) {
+            float elapsed = clock.getElapsedTime().asSeconds();
+            if (elapsed < DT) {
+                sf::sleep(sf::seconds(DT - elapsed));
+            }
+        }
+
         float frameTime = clock.restart().asSeconds();
         total_time += frameTime;
 
