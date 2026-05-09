@@ -149,16 +149,31 @@ void Renderer::drawSwarm(const std::vector<DroneChassis>& drones) {
         swarm[idx + 4].position = sf::Vector2f(x + s, y + s);
         swarm[idx + 5].position = sf::Vector2f(x - s, y + s);
         
-        // Color by battery for each drone        
+        // Color by battery - designed for bright sky contrast
+        // 100% = deep navy (20,30,80)  -> high contrast on white/blue sky
+        //  50% = warm orange (220,120,20) -> clearly visible mid-range
+        //   0% = dark red (180,20,20)  -> danger, still visible
         for(int j = 0; j < 6; ++j) {
-            // Battery color: Green (100%) to Red (0%)
-            float battery_pct = b.battery / b.max_battery;
-            if (battery_pct < 0.0f) battery_pct = 0.0f;
-            if (battery_pct > 1.0f) battery_pct = 1.0f;
+            float bp = b.battery / b.max_battery;
+            if (bp < 0.0f) bp = 0.0f;
+            if (bp > 1.0f) bp = 1.0f;
             
-            swarm[idx + j].color.r = static_cast<uint8_t>(255.0f * (1.0f - battery_pct)); // R
-            swarm[idx + j].color.g = static_cast<uint8_t>(255.0f * battery_pct);          // G
-            swarm[idx + j].color.b = 0;                                                   // B
+            uint8_t cr, cg, cb;
+            if (bp > 0.5f) {
+                // Upper half: navy blue -> orange
+                float t = (bp - 0.5f) * 2.0f; // 1.0 at full, 0.0 at half
+                cr = static_cast<uint8_t>(220.0f - t * 200.0f); // 220 -> 20
+                cg = static_cast<uint8_t>(120.0f - t * 90.0f);  // 120 -> 30
+                cb = static_cast<uint8_t>(20.0f  + t * 60.0f);  //  20 -> 80
+            } else {
+                // Lower half: orange -> dark red
+                float t = bp * 2.0f; // 1.0 at half, 0.0 at empty
+                cr = static_cast<uint8_t>(180.0f + t * 40.0f);  // 180 -> 220
+                cg = static_cast<uint8_t>(20.0f  + t * 100.0f); //  20 -> 120
+                cb = static_cast<uint8_t>(20.0f);                //  20 -> 20
+            }
+            
+            swarm[idx + j].color = sf::Color(cr, cg, cb);
         }
     }
     

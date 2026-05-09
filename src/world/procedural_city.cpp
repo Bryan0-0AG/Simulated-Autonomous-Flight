@@ -10,7 +10,10 @@ void ProceduralCity::generate(unsigned int seed) {
     std::srand(seed);
     buildings.clear();
 
-    float currentX = 100.0f; 
+    float currentX = 100.0f;
+    float lastSpawnX = -10000.0f; // Track last SPAWN building X position
+    constexpr float MIN_SPAWN_GAP = 800.0f; // Minimum X distance between SPAWN buildings
+
     while (currentX < worldWidth - BUILDING_MAX_WIDTH) {
         
         float gap = 20.0f + (std::rand() % 100); 
@@ -27,6 +30,15 @@ void ProceduralCity::generate(unsigned int seed) {
             else if (r < PROB_CHARGER + PROB_COLLECT) type = BuildingType::COLLECTION;
             else if (r < PROB_CHARGER + PROB_COLLECT + PROB_DEPLOY) type = BuildingType::DEPLOY;
             else if (r < PROB_CHARGER + PROB_COLLECT + PROB_DEPLOY + PROB_SPAWN) type = BuildingType::SPAWN;
+
+            // Prevent SPAWN buildings from being too close together
+            if (type == BuildingType::SPAWN && (currentX - lastSpawnX) < MIN_SPAWN_GAP) {
+                type = BuildingType::OBSTACLE; // Downgrade to obstacle
+            }
+
+            if (type == BuildingType::SPAWN) {
+                lastSpawnX = currentX;
+            }
 
             addBuilding(currentX, 0.0f, bWidth, bHeight, type);
             currentX += bWidth;

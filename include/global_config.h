@@ -33,6 +33,22 @@ constexpr float FORMATION_SPACING_Y = 35.0f;
 constexpr float MATRIX_ERROR_TOLERANCE = 10.0f;
 constexpr float MATRIX_AI_INTERVALE = 5.0f;
 
+// Aerial Space - Two-tier altitude system
+// Tier 1: STAGING ZONE - matrices form here (above buildings, below highway)
+constexpr float STAGING_ALTITUDE_BASE = 1000.0f;   // Base altitude for staging (well above tallest buildings ~750)
+constexpr float STAGING_LANE_HEIGHT = 500.0f;       // Vertical separation between staging slots (exceeds max matrix height)
+constexpr int   MAX_STAGING_LANES = 6;              // Parallel staging bands
+
+// Tier 2: HIGHWAY ZONE - matrices travel here (well above staging)
+constexpr int   MAX_AERIAL_LANES = 6;              // Total number of highway lanes
+constexpr float CRUISE_ALTITUDE_BASE = 4500.0f;    // Base altitude for lowest highway lane (above highest staging slot)
+constexpr float LANE_HEIGHT = 400.0f;              // Vertical separation between highway lanes (must exceed tallest matrix)
+constexpr float MATRIX_SAFETY_MARGIN = 80.0f;      // Extra padding around each matrix bounding box
+constexpr float COLLISION_REPULSION_FORCE = 40.0f;  // Strength of repulsion when bounds overlap
+constexpr float SAME_LANE_LOOKAHEAD = 800.0f;       // Distance to start braking for same-lane matrices
+constexpr float MATRIX_MOVE_SPEED = 80.0f;          // Units per second the matrix center advances toward nav_target
+constexpr float FORWARD_VISION_DISTANCE = 1200.0f;  // How far ahead the matrix "sees" obstacles
+
 // ==============================
 // CITY GENERATION
 // ==============================
@@ -98,6 +114,18 @@ const unsigned short SERVER_PORT = 9999;
 // ==============================
 // AI
 // ==============================
-constexpr int LLM_QUERY_INTERVAL = 120;
+constexpr int LLM_QUERY_INTERVAL = 200;
+
+// ==============================
+// MISSIONS
+// ==============================
+
+constexpr int MISSION_SPAWN_AMOUNT = 50;
+constexpr int PACKAGES_PER_MISSION_MIN = 300;
+constexpr int PACKAGES_PER_MISSION_MAX = 700;
+// Seconds to wait between launching each queued mission.
+// Gives the previous mission's matrices time to clear the spawn zone before the next arrives.
+constexpr float MISSION_DISPATCH_DELAY = 8.0f;
+
 
 #endif // GLOBAL_CONFIG_H

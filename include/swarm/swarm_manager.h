@@ -41,7 +41,7 @@ private:
     std::vector<SpawnBuilding> active_spawn_plans;
     
     void deploySwarmOnBuilding(const Building& b, MatrixGroup& matrix, int startIdx, int count);
-    void runAI(const world& vWorld, const ProceduralCity& city);
+    void runAI(const world& vWorld, const ProceduralCity& city, float dt);
     void processSpawning(float dt, const ProceduralCity& city);
     
     float spawn_timer = 0.0f;

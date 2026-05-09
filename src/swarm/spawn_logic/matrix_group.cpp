@@ -1,11 +1,13 @@
 #include "swarm/spawn_logic/matrix_group.h"
 #include "swarm/swarm_dynamics.h"
 #include "AI/states.h"
+#include "global_config.h"
 #include <iostream>
 #include <cmath>
 
 MatrixGroup::MatrixGroup(int id, Vector2 center, int cols, float col_spacing, int rows, float row_spacing) 
-    : id(id), rows(rows), cols(cols), center(center), col_spacing(col_spacing), row_spacing(row_spacing) {
+    : id(id), rows(rows), cols(cols), center(center), nav_target(center),
+      col_spacing(col_spacing), row_spacing(row_spacing) {
     current_state = toInt(DroneState::FLYING);
     current_action = toInt(DroneAction::TAKEOFF);
     mission_timer = 0.0f;
@@ -21,8 +23,9 @@ void MatrixGroup::insertChild(int droneId, int r, int c) {
     children.push_back({droneId, r, c});
 }
 
-void MatrixGroup::moveTo(Vector2 newCenter) {
-    center = newCenter;
+void MatrixGroup::moveTo(Vector2 newTarget) {
+    // Only set the navigation target - center moves gradually in matrix_ai
+    nav_target = newTarget;
 }
 
 void MatrixGroup::updateMission(float dt) {
@@ -71,3 +74,19 @@ void MatrixGroup::reshape(int newCols, std::vector<DroneChassis>& drones) {
     }
 }
 
+MatrixBounds MatrixGroup::getBounds(float safetyMargin) const {
+    // Calculate the half-extents of the matrix formation
+    float halfWidth  = (cols * col_spacing) / 2.0f + safetyMargin;
+    float halfHeight = (rows * row_spacing) / 2.0f + safetyMargin;
+    return {
+        center.x - halfWidth,
+        center.x + halfWidth,
+        center.y - halfHeight,
+        center.y + halfHeight
+    };
+}
+
+float MatrixGroup::getLaneAltitude() const {
+    // Each matrix flies at a unique altitude: base + (lane * spacing)
+    return CRUISE_ALTITUDE_BASE + (assigned_lane * LANE_HEIGHT);
+}

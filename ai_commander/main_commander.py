@@ -34,6 +34,7 @@ def main():
                         if not data:
                             break
                         
+                        print(f"\n[RAW DATA] Recibido: {data}")
                         # 3. Procesar datos recibidos
                         swarm_data = json.loads(data)
                         print(f"\n[DATOS] Recibidos datos de {swarm_data.get('total_drones')} drones.")
@@ -44,13 +45,9 @@ def main():
                             strategy = brain.generate_strategy(swarm_data)
                         except Exception as e:
                             print(f"[ERROR] Al consultar al LLM: {e}")
-                            strategy = {
-                                "global_order": "Mantener protocolos estándar de vuelo. Monitoreo de sensores activado.",
-                                "analysis": "Error de cuota en API de IA. Usando protocolo de contingencia local."
-                            }
+                            strategy = {"commands": []}
                         
-                        print(f"[ORDEN] {strategy.get('global_order')}")
-                        print(f"[ANALISIS] {strategy.get('analysis')}")
+                        print(f"[ORDEN] {strategy}")
 
                         # 5. Enviar respuesta de vuelta a C++
                         response = json.dumps(strategy) + "\n"
@@ -58,6 +55,7 @@ def main():
                         
                     except json.JSONDecodeError:
                         # A veces los paquetes de red llegan fragmentados o pegados
+                        print(f"[JSON ERROR] Fallo al parsear JSON.")
                         continue
                     except Exception as e:
                         print(f"[ERROR] En el bucle de comunicacion: {e}")

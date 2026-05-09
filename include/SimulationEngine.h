@@ -33,6 +33,11 @@ private:
     float accumulator;
     int seconds_passed;
 
+    // Mission Queue - missions are dispatched one at a time with a delay
+    // to prevent mass simultaneous spawning from overwhelming the airspace
+    int missions_remaining;
+    float mission_dispatch_timer;
+
     void handleLogicPerSecond();
     void render();
 };

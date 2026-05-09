@@ -1,6 +1,8 @@
 #include "swarm/spawn_logic/mission_orchestrator.h"
 #include "global_config.h"
+#include "AI/states.h"
 #include <iostream>
+#include <set>
 
 void MissionOrchestrator::initiateDeployment(
     const ProceduralCity& city, 
@@ -10,8 +12,18 @@ void MissionOrchestrator::initiateDeployment(
     std::vector<MatrixGroup>& matrix_groups,
     std::vector<SpawnBuilding>& active_spawn_plans) 
 {
-    // 1. Obtener candidatos usando el Calculator (auxiliars)
-    std::vector<int> selectedIndices = DeploymentCalculator::findBestSpawnBuildings(city, missionTarget, buildingCount);
+    // Build set of buildings already occupied by TAKEOFF matrices
+    std::set<int> occupied;
+    for (size_t i = 0; i < active_spawn_plans.size(); i++) {
+        // Only block if the matrix is still forming (TAKEOFF state)
+        if (i < matrix_groups.size() &&
+            matrix_groups[i].current_action == toInt(DroneAction::TAKEOFF)) {
+            occupied.insert(active_spawn_plans[i].building_idx);
+        }
+    }
+
+    // Find spawn buildings, excluding occupied ones
+    std::vector<int> selectedIndices = DeploymentCalculator::findBestSpawnBuildings(city, missionTarget, buildingCount, occupied);
     if (selectedIndices.empty()) return;
 
     int drones_per_building = droneCount / (int)selectedIndices.size();
@@ -35,11 +47,64 @@ void MissionOrchestrator::createDeploymentUnit(
     // Usar Calculator para las dimensiones
     auto dims = DeploymentCalculator::calculateOptimalDimensions(b, dronesForBuilding);
     
-    Vector2 spawnTarget = { b.bounds.position.x + b.bounds.size.x / 2, 1500.0f };
     int matrix_id = (int)matrix_groups.size();
+    
+    // Assign staging slot (where matrix forms up, above buildings, below highways)
+    int stagingSlot = matrix_id % MAX_STAGING_LANES;
+    float stagingAltitude = STAGING_ALTITUDE_BASE + (stagingSlot * STAGING_LANE_HEIGHT);
+    
+    // Pre-assign highway lane (where matrix will navigate after formation is stable)
+    int highwayLane = matrix_id % MAX_AERIAL_LANES;
+    
+    float baseX = b.bounds.position.x + b.bounds.size.x / 2.0f;
+
+    // Calculate the projected bounds of the new matrix at its staging position
+    float halfW = (dims.cols * FORMATION_SPACING_X) / 2.0f + MATRIX_SAFETY_MARGIN;
+    float halfH = (dims.rows * FORMATION_SPACING_Y) / 2.0f + MATRIX_SAFETY_MARGIN;
+
+    // Resolve collisions in the STAGING zone: shift position until no overlap.
+    float spawnX = baseX;
+    int spawnStaging = stagingSlot;
+    float spawnY = stagingAltitude;
+    int maxAttempts = MAX_STAGING_LANES * 10; // Safety cap to avoid infinite loop
+
+    for (int attempt = 0; attempt < maxAttempts; attempt++) {
+        bool collision = false;
+        for (const auto& existing : matrix_groups) {
+            // Compute existing matrix bounds
+            float exHalfW = (existing.cols * existing.col_spacing) / 2.0f + MATRIX_SAFETY_MARGIN;
+            float exHalfH = (existing.rows * existing.row_spacing) / 2.0f + MATRIX_SAFETY_MARGIN;
+
+            // AABB overlap test between projected new position and existing matrix
+            bool xOverlap = (spawnX - halfW) < (existing.center.x + exHalfW) &&
+                            (spawnX + halfW) > (existing.center.x - exHalfW);
+            bool yOverlap = (spawnY - halfH) < (existing.center.y + exHalfH) &&
+                            (spawnY + halfH) > (existing.center.y - exHalfH);
+
+            if (xOverlap && yOverlap) {
+                collision = true;
+                // Shift X to the right edge of the blocking matrix + full width margin
+                spawnX = existing.center.x + exHalfW + halfW + MATRIX_SAFETY_MARGIN;
+                break; // Re-check all matrices with the new position
+            }
+        }
+
+        if (!collision) break; // Found a clear spot
+
+        // If X drifted too far from building (beyond 5 matrix widths), try next staging slot
+        if (spawnX > baseX + (halfW * 2.0f) * 5.0f) {
+            spawnStaging = (spawnStaging + 1) % MAX_STAGING_LANES;
+            spawnY = STAGING_ALTITUDE_BASE + (spawnStaging * STAGING_LANE_HEIGHT);
+            spawnX = baseX; // Reset X for the new staging slot
+        }
+    }
+
+    Vector2 spawnTarget = { spawnX, spawnY };
     
     matrix_groups.emplace_back(matrix_id, spawnTarget, dims.cols, FORMATION_SPACING_X, dims.rows, FORMATION_SPACING_Y);
     matrix_groups.back().target_count = dronesForBuilding;
+    // assigned_lane is the HIGHWAY lane (used after formation completes and matrix ascends)
+    matrix_groups.back().assigned_lane = highwayLane;
     
     active_spawn_plans.push_back({
         b_idx, 0, dims.batchSize, (dims.rows * dims.cols + dims.batchSize - 1) / dims.batchSize, 0.0f, dims.rows * dims.cols, 0
@@ -73,7 +138,7 @@ TransportMissionInfo MissionOrchestrator::startTransportMission(ProceduralCity& 
     
     // 4. Setup state to visually link them
     buildings[c_idx].is_mission_active = true;
-    buildings[c_idx].pending_packages = 50 + (std::rand() % 100); // 50 to 150 packages
+    buildings[c_idx].pending_packages = PACKAGES_PER_MISSION_MIN + (std::rand() % (PACKAGES_PER_MISSION_MAX - PACKAGES_PER_MISSION_MIN));
     buildings[c_idx].target_building_idx = d_idx;
     
     buildings[d_idx].is_mission_active = true; // Also mark the deploy building as active so it highlights

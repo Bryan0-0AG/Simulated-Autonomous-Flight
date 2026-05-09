@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include "swarm/swarm_dynamics.h"
+#include "swarm/spawn_logic/matrix_group.h"
 
 class NetworkBridge {
 public:
@@ -12,6 +13,7 @@ public:
     ~NetworkBridge();
 
     bool connect(const std::string& ip, unsigned short port);
+    bool getIsConnected() const { return isConnected; }
     
     void sendSwarmStatus(
         int total_drones, 
@@ -21,6 +23,9 @@ public:
         float avg_speed, 
         float avg_dist_to_target
     );
+    
+    void sendMatricesStatus(const std::vector<MatrixGroup>& matrices);
+    std::string receiveCommands();
     
     void disconnect();
 

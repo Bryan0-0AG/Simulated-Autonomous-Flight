@@ -37,8 +37,11 @@ SOURCES = src/main.cpp \
 # ==========================================
 # BLOCK 2: AMD / GPU (Kernels)
 # ==========================================
-HIP_SRC = src/swarm/swarm_dynamics.hip
-HIP_OBJ = build/swarm_dynamics.o
+HIP_SRC      = src/swarm/swarm_dynamics.hip
+HIP_OBJ      = build/swarm_dynamics.o
+
+HIP_AI_SRC   = src/AI/matrix_ai.hip
+HIP_AI_OBJ   = build/matrix_ai.o
 
 # Dependencies
 HEADERS = include/global_config.h \
@@ -51,13 +54,17 @@ HEADERS = include/global_config.h \
 # ==========================================
 # BUILD RULES
 # ==========================================
-all: build_dir $(HIP_OBJ)
+all: build_dir $(HIP_OBJ) $(HIP_AI_OBJ)
 	@echo "[BUILD] Compiling complete system with g++..."
-	$(CXX) $(CXXFLAGS) $(SOURCES) $(HIP_OBJ) -o $(OUT) $(LIBS)
+	$(CXX) $(CXXFLAGS) $(SOURCES) $(HIP_OBJ) $(HIP_AI_OBJ) -o $(OUT) $(LIBS)
 
 $(HIP_OBJ): $(HIP_SRC) $(HEADERS)
-	@echo "[AMD] Compiling GPU Kernels..."
+	@echo "[AMD] Compiling Drone Physics Kernel..."
 	$(HIPCC) $(HIPFLAGS) -fno-exceptions -fno-rtti -c $(HIP_SRC) -o $(HIP_OBJ) -Iinclude
+
+$(HIP_AI_OBJ): $(HIP_AI_SRC) $(HEADERS)
+	@echo "[AMD] Compiling Matrix AI Kernel..."
+	$(HIPCC) $(HIPFLAGS) -fno-exceptions -fno-rtti -c $(HIP_AI_SRC) -o $(HIP_AI_OBJ) -Iinclude
 
 build_dir:
 	@mkdir -p build

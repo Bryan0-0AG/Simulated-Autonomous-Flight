@@ -90,7 +90,7 @@ void SwarmManager::update(float dt, const world& vWorld, const ProceduralCity& c
     if (drones.empty()) return;
 
     // 1. AI Decisions & Mission Orchestration (CPU)
-    runAI(vWorld, city);
+    runAI(vWorld, city, dt);
 
     // 2. Prepare Obstacles for GPU (Buildings)
     const auto& buildings = city.getBuildings();
@@ -118,18 +118,34 @@ void SwarmManager::update(float dt, const world& vWorld, const ProceduralCity& c
     );
 }
 
-void SwarmManager::runAI(const world& vWorld, const ProceduralCity& city) {
-    for (auto& matrix : matrix_groups) {
-        update_matrix_ai(matrix, vWorld, drones);
-    }
+void SwarmManager::runAI(const world& vWorld, const ProceduralCity& city, float dt) {
+    // Run matrix AI as a single batch (which dispatches to GPU)
+    update_matrix_ai(matrix_groups, drones, dt);
     
     for(auto& drone : drones) {
         // Resolve world collisions before AI decisions
         const_cast<world&>(vWorld).resolveGroundCollision(drone);
 
-        // If part of a group, follow the matrix slot dynamically in any action
+        // If part of a group, follow the matrix slot dynamically
         if (drone.group_id != -1) {
-            drone.target = matrix_groups[drone.group_id].getSlotPosition(drone.group_row, drone.group_col);            
+            Vector2 slotPos = matrix_groups[drone.group_id].getSlotPosition(drone.group_row, drone.group_col);
+            
+            // TAKEOFF: vertical-first ascent to avoid diagonal paths through other formations
+            // Phase 1: Ascend vertically (keep current X, go to slot Y)
+            // Phase 2: Once at altitude, fly horizontally to slot X
+            if (toAction(drone.current_action) == DroneAction::TAKEOFF) {
+                float yDiff = std::abs(drone.position.y - slotPos.y);
+                if (yDiff > 50.0f) {
+                    // Phase 1: Go straight up to the matrix altitude
+                    drone.target = { drone.position.x, slotPos.y };
+                } else {
+                    // Phase 2: At altitude, now move horizontally to the slot
+                    drone.target = slotPos;
+                }
+            } else {
+                // FOLLOW_MATRIX and other states: track slot position directly
+                drone.target = slotPos;
+            }
         }
 
         // AI Decisions        
