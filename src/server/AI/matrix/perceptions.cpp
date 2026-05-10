@@ -6,7 +6,7 @@
 namespace MatrixAI {
 namespace Perceptions {
 
-    // Helper: Colisión AABB vs AABB
+    // Helper: AABB vs AABB collision
     bool checkAABBIntersect(const Properties::Rect& a, const Properties::Rect& b) {
         return (a.min.x <= b.max.x && a.max.x >= b.min.x &&
                 a.min.y <= b.max.y && a.max.y >= b.min.y);
@@ -15,7 +15,7 @@ namespace Perceptions {
     bool Vision(const MatrixGroup& self, Direction dir, float distance, const std::vector<MatrixGroup>& all_matrices, const std::vector<DroneChassis>& drones) {
         Properties::Rect my_bounds = Properties::getDynamicBounds(self, drones);
         
-        // Extender nuestra caja (AABB) en la dirección especificada simulando un Raycast ancho
+        // Extend our box (AABB) in the specified direction simulating a wide Raycast
         switch(dir) {
             case Direction::UP:         my_bounds.max.y += distance; break;
             case Direction::DOWN:       my_bounds.min.y -= distance; break;
@@ -32,7 +32,7 @@ namespace Perceptions {
             
             Properties::Rect other_bounds = Properties::getDynamicBounds(other, drones);
             
-            // Si nuestro raycast rectangular intersecta a la otra matriz, la "vemos"
+            // If our rectangular raycast intersects the other matrix, we "see" it
             if (checkAABBIntersect(my_bounds, other_bounds)) {
                 return true;
             }
@@ -58,7 +58,7 @@ namespace Perceptions {
     }
 
     bool ShouldIWait(const MatrixGroup& self, const MatrixGroup& other) {
-        // Regla 1: La que ya está en misión activa tiene prioridad sobre la que está en despegue (STAGING)
+        // Rule 1: The one already in active mission has priority over the one in staging (STAGING)
         if (self.current_state == 0 && other.current_state != 0) return true; // Yo espero (estoy en staging)
         if (self.current_state != 0 && other.current_state == 0) return false; // Yo sigo (estoy en misión)
 

@@ -6,7 +6,7 @@
     <title>AMD Swarm Commander - Global Operations</title>
     <!-- Modern Typography -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=1.3">
     <!-- Plotly for Dashboard -->
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
 </head>
@@ -73,16 +73,16 @@
                 <header class="glass-panel topbar">
                     <div class="top-metric">
                         <span class="label">Engine Status</span>
-                        <span class="value orbitron" id="cmd-engine-status" style="color: #ff4d4d;">INACTIVE</span>
+                        <span class="value orbitron" id="cmd-engine-status" style="color: #888;">INACTIVE</span>
                     </div>
                     <div class="top-metric">
                         <span class="label">GPU Compute</span>
-                        <span class="value orbitron" id="cmd-gpu-status">IDLE</span>
+                        <span class="value orbitron" id="cmd-gpu-status" style="color: #888;">IDLE</span>
                     </div>
 
                     <div class="top-metric">
                         <span class="label">Frame Rate</span>
-                        <span class="value orbitron" id="stat-fps">60 FPS</span>
+                        <span class="value orbitron" id="stat-fps">0 FPS</span>
                     </div>
                 </header>
 
@@ -104,6 +104,17 @@
                         <p>Real-time telemetry and advanced prediction models.</p>
                     </div>
                     <div style="display: flex; gap: 1rem; align-items: center;">
+                        <div class="global-filter" style="display: flex; gap: 5px; background: rgba(0,0,0,0.2); padding: 5px 10px; border-radius: 8px; border: 1px solid var(--glass-border);">
+                            <span style="font-size: 0.7rem; color: var(--primary); opacity: 0.8; align-self: center;">FILTER:</span>
+                            <select id="filter-type" class="form-group input" style="font-size: 0.75rem; padding: 2px 5px; background: rgba(0,0,0,0.3); color: var(--primary); border: 1px solid var(--glass-border); width: 120px;">
+                                <option value="global">Global View</option>
+                                <option value="mission">By Mission ID</option>
+                                <option value="matrix">By Matrix ID</option>
+                            </select>
+                            <select id="filter-value" class="form-group input" style="font-size: 0.75rem; padding: 2px 5px; background: rgba(0,0,0,0.3); color: var(--primary); border: 1px solid var(--glass-border); min-width: 100px;">
+                                <option value="">Select ID</option>
+                            </select>
+                        </div>
                         <select id="dash-session-select" class="form-group input" style="background: rgba(0,0,0,0.3); color: var(--primary); border: 1px solid var(--glass-border); padding: 0.5rem; border-radius: 4px;">
                             <option value="">Loading sessions...</option>
                         </select>
@@ -139,12 +150,33 @@
                     <!-- Row 1 -->
                     <div style="display: flex; gap: 1.5rem; min-height: 350px; flex-wrap: wrap; width: 100%;">
                         <div class="glass-panel" style="flex: 2 1 400px; padding: 1rem; display: flex; flex-direction: column; min-width: 0;">
-                            <h3 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--text-muted);">🌐 Global Swarm Trajectories</h3>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                <div class="chart-header">
+                                    <h3><i class="fas fa-globe"></i> Swarm Trajectories</h3>
+                                </div>
+                            </div>
                             <div id="plot-traj" style="flex: 1; min-height: 0;"></div>
                         </div>
-                        <div class="glass-panel" style="flex: 1 1 300px; padding: 1rem; display: flex; flex-direction: column; min-width: 0;">
-                            <h3 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--text-muted);">🧠 AI State Distribution</h3>
-                            <div id="plot-states" style="flex: 1; min-height: 0;"></div>
+                        <div class="glass-panel" style="flex: 1 1 450px; padding: 1rem; display: flex; flex-direction: column; min-width: 0; max-height: 400px;">
+                            <h3 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--text-muted);">🧠 AI Intelligence Distribution</h3>
+                            <div class="ai-grid" style="display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 8px; flex: 1; min-height: 0;">
+                                <div style="display: flex; flex-direction: column; min-height: 0; position: relative;">
+                                    <span style="font-size: 0.55rem; text-align: center; color: var(--primary); font-weight: bold; margin-bottom: 2px;">DRONE STATES</span>
+                                    <div id="plot-drone-states" style="flex: 1; height: 140px;"></div>
+                                </div>
+                                <div style="display: flex; flex-direction: column; min-height: 0; position: relative;">
+                                    <span style="font-size: 0.55rem; text-align: center; color: var(--primary); font-weight: bold; margin-bottom: 2px;">DRONE ACTIONS</span>
+                                    <div id="plot-drone-actions" style="flex: 1; height: 140px;"></div>
+                                </div>
+                                <div style="display: flex; flex-direction: column; min-height: 0; position: relative;">
+                                    <span style="font-size: 0.55rem; text-align: center; color: var(--highlight); font-weight: bold; margin-bottom: 2px;">MATRIX STATES</span>
+                                    <div id="plot-matrix-states" style="flex: 1; height: 140px;"></div>
+                                </div>
+                                <div style="display: flex; flex-direction: column; min-height: 0; position: relative;">
+                                    <span style="font-size: 0.55rem; text-align: center; color: var(--highlight); font-weight: bold; margin-bottom: 2px;">MATRIX ACTIONS</span>
+                                    <div id="plot-matrix-actions" style="flex: 1; height: 140px;"></div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -203,11 +235,47 @@
                     <label>Max Swarm Density</label>
                     <input type="number" id="cfg-density" value="5000" step="100">
                 </div>
+                <!-- Real-time Time Scale Control -->
+                <div class="form-group" style="margin-top: 1rem; border-top: 1px solid var(--glass-border); padding-top: 1rem;">
+                    <label style="display: flex; justify-content: space-between;">
+                        <span>Simulation Speed</span>
+                        <span id="val-time-scale" class="highlight">1.0x</span>
+                    </label>
+                    <input type="range" id="cfg-time-scale" min="0.1" max="5.0" step="0.1" value="1.0" style="width: 100%; margin-top: 0.5rem; accent-color: var(--primary);">
+                    <p style="font-size: 0.65rem; color: var(--text-muted); margin-top: 0.3rem;">
+                        0.1x (Slow Motion) — 5.0x (Hyper-speed)
+                    </p>
+                </div>
+            </div>
+
+            <!-- Cloud Connectivity -->
+            <div class="cloud-settings" style="margin-top: 1.5rem; border-top: 1px solid var(--glass-border); padding-top: 1rem;">
+                <h3 class="orbitron" style="font-size: 0.9rem; margin-bottom: 0.8rem; color: var(--highlight);">☁️ CLOUD CONNECTIVITY</h3>
+                <div class="form-group">
+                    <label>Use ROCm Cloud Droplet</label>
+                    <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
+                        <input type="checkbox" id="cfg-use-cloud" style="width: auto;">
+                        <span style="font-size: 0.8rem; color: var(--text-muted);">Enable Remote Execution</span>
+                    </div>
+                </div>
+                <div id="cloud-fields" style="display: none; margin-top: 10px;">
+                    <div class="form-group">
+                        <label>Droplet IP / Host</label>
+                        <input type="text" id="cfg-cloud-host" placeholder="e.g. 159.203.x.x" style="font-family: monospace;">
+                    </div>
+                    <div class="form-group">
+                        <label>SSH User</label>
+                        <input type="text" id="cfg-cloud-user" value="ubuntu">
+                    </div>
+                    <button id="btn-sync-cloud" class="btn outline-btn" style="width: 100%; margin-top: 10px; font-size: 0.8rem;">
+                        🔄 Sync Code to Droplet
+                    </button>
+                </div>
             </div>
 
             <div style="display: flex; gap: 0.5rem; margin-top: 1.5rem; flex-shrink: 0;">
-                <button id="btn-boot-engine" class="btn" style="flex: 1; background: rgba(0, 255, 128, 0.1); color: #00ff80; border: 1px solid #00ff80; padding: 1rem; font-size: 0.9rem;">
-                    <span class="icon">▶️</span> Boot
+                <button id="btn-boot-engine" class="btn primary-btn" style="flex: 1; padding: 1rem; font-size: 0.9rem;">
+                    Boot Engine
                 </button>
                 <button id="btn-kill-engine" class="btn" style="flex: 1; background: rgba(255, 77, 77, 0.1); color: #ff4d4d; border: 1px solid #ff4d4d; padding: 1rem; font-size: 0.9rem;" disabled>
                     <span class="icon">⏹️</span> Kill
@@ -227,7 +295,7 @@
         </aside>
     </div>
 
-    <script src="app.js"></script>
-    <script src="dashboard.js"></script>
+    <script src="app.js?v=1.3"></script>
+    <script src="dashboard.js?v=1.3"></script>
 </body>
 </html>

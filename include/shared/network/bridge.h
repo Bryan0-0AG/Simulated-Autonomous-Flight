@@ -18,11 +18,13 @@ public:
         int total_drones, 
         int critical_drones, 
         int drones_in_mission, 
+        int live_missions,
         float avg_battery, 
         float avg_speed, 
         float avg_dist_to_target
     );
     void disconnect();
+    void pollCommands(); // Leer comandos desde Python (ej: TIME_SCALE)
 
     // --- NUEVO: Visualizador Remoto (C++ a C++) ---
     // Para el Servidor (Nube AMD)

@@ -1,4 +1,5 @@
 #include "network/bridge.h"
+#include "global_config.h"
 #include <iostream>
 #include <sstream>
 #include <cstring>
@@ -21,11 +22,12 @@ bool NetworkBridge::connect(const std::string& ip, unsigned short port) {
         isOrchestratorConnected = false;
         return false;
     }
+    orchestratorSocket.setBlocking(false); // <--- IMPORTANTE: No bloquear el simulador
     isOrchestratorConnected = true;
     return true;
 }
 
-void NetworkBridge::sendSwarmStatus(int total_drones, int critical_drones, int drones_in_mission, float avg_battery, float avg_speed, float avg_dist_to_target) {
+void NetworkBridge::sendSwarmStatus(int total_drones, int critical_drones, int drones_in_mission, int live_missions, float avg_battery, float avg_speed, float avg_dist_to_target) {
     if (!isOrchestratorConnected) return;
 
     std::stringstream temp;
@@ -33,6 +35,7 @@ void NetworkBridge::sendSwarmStatus(int total_drones, int critical_drones, int d
        << "\"total_drones\": " << total_drones << ", "
        << "\"critical_drones\": " << critical_drones << ", "
        << "\"drones_in_mission\": " << drones_in_mission << ", "
+       << "\"live_missions\": " << live_missions << ", "
        << "\"avg_battery\": " << avg_battery << ", "
        << "\"avg_speed\": " << avg_speed << ", "
        << "\"avg_dist_to_target\": " << avg_dist_to_target
@@ -54,7 +57,7 @@ bool NetworkBridge::startVisualizerServer(unsigned short port) {
         return false;
     }
     viewerListener.setBlocking(false); // No detener la simulación esperando a que el cliente se conecte
-    std::cout << "[BRIDGE] Servidor de visualizacion escuchando en el puerto " << port << std::endl;
+    std::cout << "[BRIDGE] Visualization server listening on port " << port << std::endl;
     return true;
 }
 
@@ -208,6 +211,40 @@ bool NetworkBridge::receivePositions(std::vector<DroneChassis>& drones) {
     }
     
     return false;
+}
+
+void NetworkBridge::pollCommands() {
+    if (!isOrchestratorConnected) {
+        // Intentar reconectar automáticamente cada cierto tiempo
+        static sf::Clock retryClock;
+        if (retryClock.getElapsedTime().asSeconds() > 2.0f) {
+            connect(SERVER_IP, SERVER_PORT);
+            retryClock.restart();
+        }
+        return;
+    }
+
+    char data[128];
+    std::size_t received;
+    sf::Socket::Status status = orchestratorSocket.receive(data, sizeof(data) - 1, received);
+
+    if (status == sf::Socket::Status::Done) {
+        data[received] = '\0';
+        std::string cmd(data);
+        
+        // Comando: SET_TIME_SCALE:0.5
+        if (cmd.find("SET_TIME_SCALE:") == 0) {
+            try {
+                float newScale = std::stof(cmd.substr(15));
+                TIME_SCALE = newScale;
+                std::cout << "[BRIDGE] Time Scale updated to: " << TIME_SCALE << std::endl;
+            } catch (...) {
+                std::cerr << "[BRIDGE] Error al parsear TIME_SCALE" << std::endl;
+            }
+        }
+    } else if (status == sf::Socket::Status::Disconnected) {
+        isOrchestratorConnected = false;
+    }
 }
 
 void NetworkBridge::disconnect() {

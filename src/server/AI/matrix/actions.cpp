@@ -7,7 +7,7 @@ namespace MatrixAI {
 namespace Actions {
 
     void executeMove(MatrixGroup& self, Vector2 new_target) {
-        self.center = new_target;
+        self.current_target = new_target; // Solo actualizamos el objetivo, el movimiento será suave
         self.current_action = States::toInt(States::MatrixAction::FOLLOW_MATRIX);
     }
 

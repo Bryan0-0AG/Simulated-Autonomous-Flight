@@ -14,29 +14,15 @@ SwarmManager::SwarmManager(Vector2 worldSize) {
     drones.reserve(DRONE_COUNT);
 }
 
-void SwarmManager::startMission(const ProceduralCity& city, Vector2 missionTarget, int droneCount, int buildingCount) {
-    auto plans = MissionOrchestrator::createDeploymentPlans(city, missionTarget, droneCount, buildingCount);
-    
-    for (const auto& plan : plans) {
-        MatrixGroup m = MatrixSpawner::spawn(matrix_groups.size(), city.getBuildings()[plan.building_idx], plan.total_drones);
-        matrix_groups.push_back(m);
-        active_spawn_plans.push_back(plan);
-    }
-}
-
-TransportMissionInfo SwarmManager::startRandomTransportMission(ProceduralCity& city) {
-    return MissionOrchestrator::startTransportMission(city);
-}
-
 
 void SwarmManager::update(float dt, const world& vWorld, const ProceduralCity& city) {
-    // 0. Spawning Logic handled entirely by DroneSpawner
-    DroneSpawner::updateSpawning(dt, city, drones, matrix_groups, active_spawn_plans, spawn_timer);
+    // 0. Spawning Logic handled by DroneSpawner using Orchestrator plans
+    DroneSpawner::updateSpawning(dt, city, drones, matrix_groups, MissionOrchestrator::getActiveSpawnPlans(), spawn_timer);
 
     if (drones.empty()) return;
 
     // 1. AI Decisions & Mission Orchestration (CPU)
-    runAI(vWorld, city);
+    runAI(dt, vWorld, city);
 
     // 2. Physics Kernel (GPU/Fallback)
     launch_physics_kernel(
@@ -46,9 +32,16 @@ void SwarmManager::update(float dt, const world& vWorld, const ProceduralCity& c
     );
 }
 
-void SwarmManager::runAI(const world& vWorld, const ProceduralCity& city) {
+void SwarmManager::runAI(float dt, const world& vWorld, const ProceduralCity& city) {
     for (auto& matrix : matrix_groups) {
-        MatrixAI::orchestrate(matrix, matrix_groups, drones, DT);
+        MatrixAI::orchestrate(matrix, matrix_groups, drones, dt);
+    }
+
+    // APLICAR REPULSIÓN AQUÍ: Después de que la IA decida a dónde ir, 
+    // pero ANTES de que los drones sigan al centro.
+    for (auto& matrix : matrix_groups) {
+        MatrixAI::Properties::applyDynamicRepulsion(matrix, matrix_groups, drones, dt);
+        MatrixAI::Properties::updateMatrixPhysics(matrix, dt);
     }
     
     for(auto& drone : drones) {
@@ -66,7 +59,7 @@ void SwarmManager::runAI(const world& vWorld, const ProceduralCity& city) {
 }
 
 SwarmStats SwarmManager::getStats() const {
-    SwarmStats stats = {0, 0, 0, 0.0f, 0.0f, 0.0f};
+    SwarmStats stats = {0, 0, 0, 0, 0.0f, 0.0f, 0.0f};
     if (drones.empty()) return stats;
 
     float total_battery = 0.0f;
@@ -74,6 +67,17 @@ SwarmStats SwarmManager::getStats() const {
     float total_dist = 0.0f;
 
     stats.active_drones = static_cast<int>(drones.size());
+
+    // Calcular misiones únicas reales
+    std::vector<int> mission_ids;
+    for(const auto& m : matrix_groups) {
+        if (m.mission_id > 0) {
+            if (std::find(mission_ids.begin(), mission_ids.end(), m.mission_id) == mission_ids.end()) {
+                mission_ids.push_back(m.mission_id);
+            }
+        }
+    }
+    stats.live_missions = static_cast<int>(mission_ids.size());
 
     for(const auto& d : drones) {
         total_battery += d.battery;

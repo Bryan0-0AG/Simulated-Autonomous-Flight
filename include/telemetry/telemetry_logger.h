@@ -32,7 +32,7 @@ public:
         file_all.open(dir + "/Full_Telemetry.csv");
 
         // Header cleaned of fields not calculated on the GPU
-        file_all << "time,num_drones,id,pos_x,pos_y,vel_x,vel_y,"
+        file_all << "time,num_drones,mission_id,id,pos_x,pos_y,vel_x,vel_y,"
                  << "target_x,target_y,thrust_val,angle_val,"
                  << "error_x,error_y,f_sep_x,f_sep_y,"
                  << "action,state,battery,childs\n";
@@ -49,6 +49,7 @@ public:
 
         file_all << time << ","
                  << num_drones << ","
+                 << matrix.mission_id << ","
                  << matrix.id << ","
                  << avg_pos.x << "," << avg_pos.y << ","
                  << avg_vel.x << "," << avg_vel.y << ","

@@ -43,12 +43,43 @@ def load_full_data(path):
         print(f"Error loading CSV: {e}")
         return None
 
-def process_telemetry_data(df):
+def process_telemetry_data(df, mission_id=None, matrix_id=None):
     """Processes the DataFrame into the JSON structure needed by the frontend Plotly charts."""
     if df is None or df.empty:
         return {"error": "Invalid or empty data"}
-        
+    
     try:
+        # --- NAVIGATION METADATA (Before filtering) ---
+        if 'mission_id' not in df.columns:
+            df['mission_id'] = 0
+        df['mission_id'] = df['mission_id'].fillna(0).astype(int)
+        df['id'] = df['id'].fillna(0).astype(int)
+
+        # Get ALL available IDs to maintain navigability
+        all_missions = sorted([int(m) for m in df['mission_id'].unique().tolist() if m > 0])
+        all_matrices = sorted([int(m) for m in df['id'].unique().tolist() if m > 0])
+        
+        # Fallback for sessions without missions
+        if not all_missions and all_matrices:
+            all_missions = all_matrices
+
+        # --- GLOBAL FILTERING (For metrics and charts) ---
+        if mission_id is not None:
+            df = df[df['mission_id'] == int(mission_id)]
+        elif matrix_id is not None:
+            df = df[df['id'] == int(matrix_id)]
+            
+        if df.empty:
+            return {
+                "error": "No data for this filter", 
+                "filter_data": {"missions": all_missions, "matrices": all_matrices},
+                "metrics": {"duration":0,"drones":0,"matrices":0,"peak_velocity":0,"avg_battery":0},
+                "trajectories": [],
+                "states": {"labels":[], "values":[]},
+                "time_series": {"time":[], "error":[], "battery":[], "repulsion":[], "speed":[], "acceleration":[]},
+                "actuator": {"time":[], "thrust":[], "angle":[]}
+            }
+
         # 1. Global Metrics
         last_time = df['time'].max()
         num_drones = int(df['num_drones'].max()) if 'num_drones' in df else 0
@@ -56,24 +87,42 @@ def process_telemetry_data(df):
         avg_battery = df.groupby('id')['battery'].last().mean()
         max_speed = df['speed'].max()
         
-        # 2. Global Swarm Trajectories (Sample first 15 drones)
-        sample_size = 15
-        df_traj = df[df['id'] < sample_size].copy()
         trajectories = []
-        for drone_id, group in df_traj.groupby('id'):
+        for drone_id, group in df.groupby('id'):
             trajectories.append({
                 "id": int(drone_id),
+                "mission_id": int(group['mission_id'].iloc[0]),
                 "x": group['pos_x'].tolist(),
                 "y": group['pos_y'].tolist(),
                 "time": group['time'].tolist()
             })
             
-        # 3. AI State Distribution
-        latest_states = df.sort_values('time').groupby('id').tail(1)
-        state_counts = latest_states['state'].value_counts()
-        states_pie = {
-            "labels": state_counts.index.tolist(),
-            "values": state_counts.values.tolist()
+        # 3. AI Intelligence Distribution (2x2 Grid)
+        latest_data = df.sort_values('time').groupby('id').tail(1)
+        
+        # Rows with childs > 0 are Matrices. We use them for both.
+        matrices_df = latest_data[latest_data['childs'] > 0]
+        
+        # Matrix Distribution: Direct counts of rows
+        def get_matrix_dist(df_sub, col):
+            if df_sub.empty or col not in df_sub.columns:
+                return {"labels": [], "values": []}
+            counts = df_sub[col].value_counts()
+            return {"labels": counts.index.tolist(), "values": counts.values.tolist()}
+
+        # Drone Distribution: Sum of 'childs' for each state/action
+        def get_drone_dist(df_sub, col):
+            if df_sub.empty or col not in df_sub.columns:
+                return {"labels": [], "values": []}
+            # Weighted count: sum childs grouped by the column
+            counts = df_sub.groupby(col)['childs'].sum()
+            return {"labels": counts.index.tolist(), "values": [int(v) for v in counts.values.tolist()]}
+
+        dist_data = {
+            "drone_states": get_drone_dist(matrices_df, 'state'),
+            "drone_actions": get_drone_dist(matrices_df, 'action'),
+            "matrix_states": get_matrix_dist(matrices_df, 'state'),
+            "matrix_actions": get_matrix_dist(matrices_df, 'action')
         }
         
         # 4. PID Error over time
@@ -92,6 +141,7 @@ def process_telemetry_data(df):
         }
         
         # 7. Collision Avoidance Stress
+        # Average only where repulsion is active to see the "stress" during interactions
         sep_data = df.groupby('time')['f_total_sep'].mean().reset_index()
         
         # 8. Kinematic Profile
@@ -110,7 +160,11 @@ def process_telemetry_data(df):
                 "avg_battery": float(avg_battery)
             },
             "trajectories": trajectories,
-            "states": states_pie,
+            "filter_data": {
+                "missions": all_missions,
+                "matrices": all_matrices
+            },
+            "ai_dist": dist_data,
             "time_series": {
                 "time": avg_err['time'].tolist(),
                 "error": avg_err['error_total'].tolist(),

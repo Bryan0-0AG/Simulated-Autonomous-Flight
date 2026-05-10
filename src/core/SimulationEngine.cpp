@@ -3,7 +3,10 @@
 #include "swarm/swarm_manager.h"
 #include "rendering/renderer.h"
 #include "lab.h"
+#include "missions/mission_orchestrator.h"
 #include <iostream>
+
+float TIME_SCALE = 1.0f; // Definición de la variable global dinámica
 
 SimulationEngine::SimulationEngine(EngineMode mode) 
     : currentMode(mode), total_time(0.0f), last_brain_update(0.0f), accumulator(0.0f), seconds_passed(0) {
@@ -42,9 +45,9 @@ void SimulationEngine::init() {
             bridge->startVisualizerServer(9998); // Abrir puerto para que el Visor se conecte
         }
 
-        for (int i = 0; i<6; i++){
-            triggerLabMission(swarm, city);
-        }
+        // Inicia con una misión, el resto se pueden disparar dinámicamente o por lotes
+        triggerLabMission(swarm, city);
+        std::cout << "[ENGINE] Initial mission triggered. Use Console to launch more." << std::endl;
     } else if (currentMode == EngineMode::CLIENT) {
         std::cout << "[ENGINE] Connecting to Cloud Simulator at " << SERVER_IP << "..." << std::endl;
         while (!bridge->connectToCloud(SERVER_IP, 9998)) {
@@ -76,6 +79,7 @@ void SimulationEngine::run() {
 
         // 2. Lógica del Enjambre o Recepción de Red
         if (currentMode == EngineMode::SERVER || currentMode == EngineMode::LOCAL) {
+            bridge->pollCommands(); // Revisar si Python envió cambios de configuración
             swarm->update(DT * TIME_SCALE, *virtualWorld, *city);
             
             if (currentMode == EngineMode::SERVER) {
@@ -93,7 +97,7 @@ void SimulationEngine::run() {
         }
 
         // 4. Logic Per Second (Telemetry & Spawning)
-        accumulator += frameTime;
+        accumulator += frameTime * TIME_SCALE;
         if (accumulator >= 1.0f) {
             if (currentMode == EngineMode::SERVER || currentMode == EngineMode::LOCAL) {
                 handleLogicPerSecond();
@@ -128,11 +132,26 @@ void SimulationEngine::handleLogicPerSecond() {
             stats.active_drones,
             stats.critical_battery_count,
             stats.drones_in_mission,
+            stats.live_missions,
             stats.avg_battery,
             stats.avg_speed,
             stats.avg_dist_to_target
         );
         last_brain_update = total_time;
+    }
+
+    // Emitir JSON para el dashboard web (System Status Sidebar) cada segundo
+    std::cout << "[TELEMETRY] {"
+              << "\"active_drones\":" << stats.active_drones << ","
+              << "\"live_missions\":" << stats.live_missions
+              << "}" << std::endl;
+
+    // Lógica Secuencial de Misiones: Solo lanzar si no hay spawneos activos
+    static int pending_missions = MISSION_COUNT - 1; 
+    if (pending_missions > 0 && MissionOrchestrator::getActiveSpawnPlans().empty()) {
+        std::cout << "[ENGINE] Current spawn finished. Launching next sequential mission... (" << pending_missions << " left)" << std::endl;
+        triggerLabMission(swarm, city);
+        pending_missions--;
     }
 
     // File Telemetry (Local Dashboard)

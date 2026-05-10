@@ -1,5 +1,5 @@
 # ==========================================
-# DETECCIÓN DE SISTEMA OPERATIVO Y RUTAS
+# OS DETECTION AND PATHS
 # ==========================================
 CXX      = g++
 OUT_SERVER = app_server

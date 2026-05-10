@@ -49,8 +49,8 @@ namespace States {
     void updateState(MatrixGroup& self, float dt) {
         self.mission_timer += dt;
         
-        // Logica para cambiar de estado si se cumple algun limite de tiempo
-        // Ejemplo: Si lleva mas de 60s esperando, forzar otra cosa
+        // Logic to change state if a time limit is met
+        // Example: If waiting for more than 60s, force something else
         if (self.current_action == toInt(MatrixAction::WAITING) && self.mission_timer > 10.0f) {
             transitionState(self, toInt(MatrixAction::FOLLOW_MATRIX));
         }

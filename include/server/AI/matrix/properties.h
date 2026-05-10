@@ -26,6 +26,12 @@ namespace Properties {
     // Calcular posicion de un slot en la matriz
     Vector2 getSlotPosition(const MatrixGroup& matrix, int row, int col);
 
+    // Aplicar fuerzas de repulsión entre matrices basadas en sus posiciones dinámicas (centroides reales)
+    void applyDynamicRepulsion(MatrixGroup& self, const std::vector<MatrixGroup>& all_matrices, const std::vector<DroneChassis>& drones, float dt);
+
+    // Integración física del movimiento de la matriz (Suavizado)
+    void updateMatrixPhysics(MatrixGroup& self, float dt);
+
     // Registrar dron en la matriz
     void insertChild(MatrixGroup& matrix, int droneId, int r, int c);
 

@@ -12,22 +12,45 @@ void DroneSpawner::updateSpawning(float dt, const ProceduralCity& city,
     if (active_spawn_plans.empty()) return;
 
     spawn_timer += dt;
-    if (spawn_timer >= 1.0f) {
+    if (spawn_timer >= BATCH_INTERVAL) {
         const auto& buildings = city.getBuildings();
-
-        for (size_t i = 0; i < active_spawn_plans.size(); ++i) {
-            auto& plan = active_spawn_plans[i];
+        
+        static size_t last_plan_idx = 0;
+        size_t num_plans = active_spawn_plans.size();
+        
+        // Intentar encontrar un plan que necesite spawnear, empezando desde el siguiente al último
+        for (size_t i = 0; i < num_plans; ++i) {
+            size_t current_idx = (last_plan_idx + 1 + i) % num_plans;
+            auto& plan = active_spawn_plans[current_idx];
+            
             if (plan.actual_batch < plan.total_batches) {
-                int to_spawn = std::min(plan.drones_per_batch, plan.total_drones - plan.drones_spawned);
+                auto m_it = std::find_if(matrix_groups.begin(), matrix_groups.end(), 
+                                       [&](const MatrixGroup& m) { return m.id == plan.matrix_id; });
                 
-                // Spawn the specific batch
-                spawnBatch(global_drones, matrix_groups[i], buildings[plan.building_idx], plan.drones_spawned, to_spawn);
-                
-                plan.drones_spawned += to_spawn;
-                plan.actual_batch++;
+                if (m_it != matrix_groups.end()) {
+                    int to_spawn = std::min(plan.drones_per_batch, plan.total_drones - plan.drones_spawned);
+                    spawnBatch(global_drones, *m_it, buildings[plan.building_idx], plan.drones_spawned, to_spawn);
+                    
+                    plan.drones_spawned += to_spawn;
+                    plan.actual_batch++;
+                    
+                    last_plan_idx = current_idx; // Guardar donde nos quedamos
+                    spawn_timer = 0.0f;
+                    return; 
+                }
             }
         }
 
+        // Limpiar planes completados (esto ocurre si el bucle termina sin retornar)
+        for (auto it = active_spawn_plans.begin(); it != active_spawn_plans.end(); ) {
+            if (it->actual_batch >= it->total_batches) {
+                it = active_spawn_plans.erase(it);
+                last_plan_idx = 0; // Resetear índice tras limpieza para evitar desbordamientos
+            } else {
+                ++it;
+            }
+        }
+        
         spawn_timer = 0.0f;
     }
 }

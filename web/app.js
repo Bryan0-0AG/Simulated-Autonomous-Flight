@@ -409,6 +409,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function connectTelemetryWS() {
         telemetrySocket = new WebSocket(`ws://${window.location.host}/ws/telemetry`);
         telemetrySocket.onmessage = (event) => {
+            updateFPS(); // FPS reales basados en paquetes de datos
             try {
                 const frame = JSON.parse(event.data);
                 if (frame.type === 'frame' && frame.pos) {
@@ -452,99 +453,234 @@ document.addEventListener('DOMContentLoaded', () => {
     function connectConsoleWS() {
         consoleSocket = new WebSocket(`ws://${window.location.host}/ws/console`);
         consoleSocket.onmessage = (event) => {
-            printToTerminal(event.data, 'stdout');
+            const line = event.data;
+            // TELEMETRY DETECTION: The engine sends JSON via stdout
+            if (line.includes("[TELEMETRY]")) {
+                try {
+                    const jsonStr = line.split("[TELEMETRY]")[1].trim();
+                    const stats = JSON.parse(jsonStr);
+                    if (stats.active_drones !== undefined) {
+                        document.getElementById('stat-drones').innerText = stats.active_drones;
+                        document.getElementById('stat-missions').innerText = stats.live_missions;
+                    }
+                } catch(e) { /* Silently ignore malformed telemetry */ }
+                return; // Do not print JSON to the visible terminal
+            }
+
+            printToTerminal(line, 'stdout');
+
+            // DYNAMIC DETECTION: State only changes when the engine actually starts
+            if (line.includes("[BRIDGE] Visualization server listening")) {
+                document.getElementById('cmd-engine-status').innerText = 'ACTIVE';
+                document.getElementById('cmd-engine-status').style.color = '#00ff80';
+                
+                document.getElementById('cmd-gpu-status').innerText = 'ROCm HYPER';
+                document.getElementById('cmd-gpu-status').style.color = '#00ff80';
+                
+                const statusEl = document.getElementById('conn-status');
+                statusEl.innerText = 'Online';
+                statusEl.className = 'status-indicator online';
+
+                const b = document.getElementById('btn-boot-engine');
+                b.innerHTML = `<span class="icon">🚀</span> Engine Started`;
+                b.style.borderColor = "#00ff80";
+                b.style.background = "rgba(0, 255, 128, 0.1)";
+            }
         };
-        consoleSocket.onclose = () => {
-            setTimeout(connectConsoleWS, 2000);
-        };
+        consoleSocket.onclose = () => setTimeout(connectConsoleWS, 2000);
     }
     connectConsoleWS();
 
     // ================================================================
-    // ENGINE CONTROLS
+    // ENGINE CONTROLS & FPS TRACKING
     // ================================================================
     const btnBoot = document.getElementById('btn-boot-engine');
     const btnKill = document.getElementById('btn-kill-engine');
     const configInputs = document.querySelectorAll('#engine-config-form input');
+    
+    let frameCount = 0;
+    let lastFpsUpdate = performance.now();
+
+    function updateFPS() {
+        frameCount++;
+        const now = performance.now();
+        if (now - lastFpsUpdate >= 1000) {
+            const fps = Math.round((frameCount * 1000) / (now - lastFpsUpdate));
+            document.getElementById('stat-fps').innerText = `${fps} FPS`;
+            frameCount = 0;
+            lastFpsUpdate = now;
+        }
+    }
 
     btnBoot.addEventListener('click', async () => {
+        // 1. Immediate "Compiling" effect
+        btnBoot.disabled = true;
+        btnBoot.innerHTML = `<span class="spinner"></span> Compiling...`;
+        btnBoot.style.borderColor = "#888";
+        
+        printToTerminal("Initiating ROCm build sequence...", "system");
+        const compileCmd = `src/shared/world/procedural_city.cpp src/server/lab.cpp build/drone_dynamics.o -o app_server -lsfml-graphics -lsfml-window -lsfml-system -lsfml-network -L"C:/Program Files/AMD/ROCm/7.1/lib" -lamdhip64`;
+        
+        const cmdDiv = document.createElement('div');
+        cmdDiv.className = 'compilation-cmd';
+        cmdDiv.innerText = compileCmd;
+        termOutput.appendChild(cmdDiv);
+        termOutput.scrollTop = termOutput.scrollHeight;
+
         try {
-            // Read config values to pass to backend (to be implemented on backend)
-            const pidP = document.getElementById('cfg-pid-p').value;
-            const drain = document.getElementById('cfg-battery').value;
-            
             const res = await fetch('/api/engine/start', { method: 'POST' });
             const data = await res.json();
             
-            const statusEl = document.getElementById('conn-status');
-            statusEl.innerText = 'Online';
-            statusEl.classList.remove('offline');
-            statusEl.classList.add('online');
-            
-            const cmdStatus = document.getElementById('cmd-engine-status');
-            if (cmdStatus) {
-                cmdStatus.innerText = 'ACTIVE';
-                cmdStatus.style.color = '#00ff80';
+            if (data.status === 'started' || data.status === 'already_running') {
+                printToTerminal("Subprocess launched. Monitoring build progress...", "system");
+                configInputs.forEach(input => input.disabled = true);
+                btnKill.disabled = false;
+            } else {
+                throw new Error(data.message || "Start failed");
             }
-
-            const gpuStatus = document.getElementById('cmd-gpu-status');
-            if (gpuStatus) {
-                gpuStatus.innerText = 'ROCm HYPER';
-                gpuStatus.style.color = '#00ff80';
-            }
-            
-            // Lock UI
-            configInputs.forEach(input => input.disabled = true);
-            btnBoot.disabled = true;
-            btnKill.disabled = false;
-
-            console.log("Server Started:", data);
         } catch (e) {
-            console.error("Failed to start engine", e);
-            alert("Could not reach the Python Orchestrator");
+            printToTerminal(`BOOT ERROR: ${e.message}`, "error");
+            btnBoot.disabled = false;
+            btnBoot.innerHTML = `Boot Engine`;
         }
     });
-
 
     btnKill.addEventListener('click', async () => {
         try {
-            const res = await fetch('/api/engine/kill', { method: 'POST' });
-            const data = await res.json();
-
+            await fetch('/api/engine/kill', { method: 'POST' });
+            
+            // Reset UI States
             drones = [];
             buildings = [];
+            
             const statusEl = document.getElementById('conn-status');
             statusEl.innerText = 'Offline';
-            statusEl.classList.remove('online');
-            statusEl.classList.add('offline');
+            statusEl.className = 'status-indicator offline';
 
-            const cmdStatus = document.getElementById('cmd-engine-status');
-            if (cmdStatus) {
-                cmdStatus.innerText = 'INACTIVE';
-                cmdStatus.style.color = '#ff4d4d';
-            }
-
-            const gpuStatus = document.getElementById('cmd-gpu-status');
-            if (gpuStatus) {
-                gpuStatus.innerText = 'IDLE';
-                gpuStatus.style.color = 'var(--text-main)';
-            }
-            document.getElementById('stat-drones').innerText = 0;
-            document.getElementById('stat-missions').innerText = 0;
+            document.getElementById('cmd-engine-status').innerText = 'INACTIVE';
+            document.getElementById('cmd-engine-status').style.color = '#ff4d4d';
+            
+            document.getElementById('cmd-gpu-status').innerText = 'IDLE';
+            document.getElementById('cmd-gpu-status').style.color = 'var(--text-muted)';
+            
+            document.getElementById('stat-drones').innerText = '0';
+            document.getElementById('stat-missions').innerText = '0';
+            document.getElementById('stat-fps').innerText = '0 FPS';
             
             // Unlock UI
-            const configInputs = document.querySelectorAll('#engine-config-form input');
-            const btnBoot = document.getElementById('btn-boot-engine');
             configInputs.forEach(input => input.disabled = false);
-            if (btnBoot) btnBoot.disabled = false;
+            btnBoot.disabled = false;
+            btnBoot.innerHTML = `Boot Engine`;
+            btnBoot.style.borderColor = "";
+            btnBoot.style.background = "";
             btnKill.disabled = true;
 
-            console.log("Server Killed:", data);
+            printToTerminal("Engine shutdown successful.", "system");
         } catch (e) {
-            console.error("Failed to kill engine", e);
+            printToTerminal(`KILL ERROR: ${e.message}`, "error");
         }
     });
 
-    // Start loop
+    // ================================================================
+    // REAL-TIME TIME SCALE CONTROL
+    // ================================================================
+    const timeScaleSlider = document.getElementById('cfg-time-scale');
+    const timeScaleValue = document.getElementById('val-time-scale');
+
+    if (timeScaleSlider && timeScaleValue) {
+        timeScaleSlider.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value).toFixed(1);
+            timeScaleValue.innerText = `${val}x`;
+        });
+
+        timeScaleSlider.addEventListener('change', async (e) => {
+            const val = e.target.value;
+            try {
+                const response = await fetch(`/api/engine/time_scale?value=${val}`, { method: 'POST' });
+                const result = await response.json();
+                if (result.status === 'error') {
+                    printToTerminal(`TIME SCALE ERROR: ${result.message}`, "error");
+                }
+            } catch (err) {
+                console.error('Error updating time scale:', err);
+            }
+        });
+    }
+
+    // ================================================================
+    // CLOUD CONNECTIVITY LOGIC
+    // ================================================================
+    const useCloudCheck = document.getElementById('cfg-use-cloud');
+    const cloudFields = document.getElementById('cloud-fields');
+    const cloudHostInput = document.getElementById('cfg-cloud-host');
+    const cloudUserInput = document.getElementById('cfg-cloud-user');
+    const btnSyncCloud = document.getElementById('btn-sync-cloud');
+
+    // Load cloud config on startup
+    fetch('/api/cloud/config')
+        .then(r => r.json())
+        .then(config => {
+            if (useCloudCheck) useCloudCheck.checked = config.use_cloud;
+            if (cloudFields) cloudFields.style.display = config.use_cloud ? 'block' : 'none';
+            if (cloudHostInput) cloudHostInput.value = config.remote_host || '';
+            if (cloudUserInput) cloudUserInput.value = config.remote_user || 'ubuntu';
+        }).catch(err => console.warn('[Cloud] Failed to load config:', err));
+
+    if (useCloudCheck) {
+        useCloudCheck.addEventListener('change', async () => {
+            const isEnabled = useCloudCheck.checked;
+            cloudFields.style.display = isEnabled ? 'block' : 'none';
+            
+            await fetch('/api/cloud/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    use_cloud: isEnabled,
+                    remote_host: cloudHostInput.value,
+                    remote_user: cloudUserInput.value
+                })
+            });
+            printToTerminal(`Cloud mode ${isEnabled ? 'ENABLED' : 'DISABLED'}`, 'system');
+        });
+    }
+
+    const updateCloudConfig = async () => {
+        await fetch('/api/cloud/config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                use_cloud: useCloudCheck.checked,
+                remote_host: cloudHostInput.value,
+                remote_user: cloudUserInput.value
+            })
+        });
+    };
+
+    if (cloudHostInput) cloudHostInput.addEventListener('change', updateCloudConfig);
+    if (cloudUserInput) cloudUserInput.addEventListener('change', updateCloudConfig);
+
+    if (btnSyncCloud) {
+        btnSyncCloud.addEventListener('click', async () => {
+            btnSyncCloud.disabled = true;
+            btnSyncCloud.innerHTML = `<span class="spinner"></span> Syncing...`;
+            printToTerminal("Synchronizing local workspace with ROCm cloud droplet...", "system");
+            
+            try {
+                const res = await fetch('/api/cloud/sync', { method: 'POST' });
+                const data = await res.json();
+                if (data.status === 'synced') {
+                    printToTerminal("SUCCESS: Files synchronized successfully.", "system");
+                } else {
+                    printToTerminal(`SYNC ERROR: ${data.message}`, "error");
+                }
+            } catch (e) {
+                printToTerminal(`SYNC FAILED: ${e.message}`, "error");
+            } finally {
+                btnSyncCloud.disabled = false;
+                btnSyncCloud.innerHTML = `🔄 Sync Code to Droplet`;
+            }
+        });
+    }
+
     requestAnimationFrame(animate);
 });

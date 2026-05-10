@@ -1,5 +1,4 @@
 #include "AI/matrix/decisions.h"
-#include "AI/matrix/perceptions.h"
 #include "AI/matrix/actions.h"
 #include "AI/matrix/states.h"
 #include <iostream>
@@ -7,6 +6,8 @@
 #include "AI/matrix/properties.h"
 #include "AI/matrix/highways.h"
 #include "global_config.h"
+
+#include "AI/matrix/perceptions.h"
 
 namespace MatrixAI {
 namespace Decisions {
@@ -18,102 +19,37 @@ namespace Decisions {
         
         // 2. Comportamiento según el Estado Actual
         if (self.current_action == States::toInt(States::MatrixAction::TAKEOFF)) {
-            float error = Properties::getGlobalError(self, drones);
             
-            // Usamos radar durante el despegue con rangos X/Y separados
-            bool danger = false;
-            for (const auto& other : all_matrices) {
-                if (other.id == self.id) continue;
-                if (Perceptions::Radar(self, 400.0f, 250.0f, {other}, drones)) {
-                    if (Perceptions::ShouldIWait(self, other)) {
-                        danger = true;
-                        break;
-                    }
-                }
+            // VERIFICACIÓN VERTICAL: ¿Hay alguien encima?
+            // Miramos hacia arriba (UP) en un rango de 600 unidades
+            if (Perceptions::Vision(self, Perceptions::Direction::UP, 600.0f, all_matrices, drones)) {
+                Actions::executeWait(self, dt, drones);
+                return;
             }
 
-            if (danger) {
-                Actions::executeWait(self, dt, drones);
-            } else if (self.isFull() && error < MATRIX_ERROR_TOLERANCE) {
-                std::cout << "[MATRIX " << self.id << "] Formation full, stable and clear. Transitioning to FOLLOW_MATRIX." << std::endl;
+            float error = Properties::getGlobalError(self, drones);
+            
+            // Ya no usamos radar, la repulsión dinámica se encarga de los espacios
+            if (self.isFull() && error < MATRIX_ERROR_TOLERANCE) {
+                std::cout << "[MATRIX " << self.id << "] Formation full and stable. Transitioning to FOLLOW_MATRIX." << std::endl;
                 States::transitionState(self, States::toInt(States::MatrixAction::FOLLOW_MATRIX));
                 Actions::executeMove(self, self.final_target);
             }
         } 
         else if (self.current_action == States::toInt(States::MatrixAction::FOLLOW_MATRIX)) {
             Vector2 next_waypoint = Highways::calculateNextWaypoint(self);
-
-            Perceptions::Direction vision_dir;
-            if (next_waypoint.x > self.center.x) vision_dir = Perceptions::Direction::RIGHT;
-            else if (next_waypoint.x < self.center.x) vision_dir = Perceptions::Direction::LEFT;
-            else if (next_waypoint.y > self.center.y) vision_dir = Perceptions::Direction::UP;
-            else vision_dir = Perceptions::Direction::DOWN;
-
-            // Visión con negociación
-            bool danger = false;
-            if (Perceptions::Vision(self, vision_dir, 200.0f, all_matrices, drones)) {
-                // Si vemos a alguien, negociamos
-                for (const auto& other : all_matrices) {
-                    if (other.id == self.id) continue;
-                    if (Perceptions::Vision(self, vision_dir, 200.0f, {other}, drones)) {
-                        if (Perceptions::ShouldIWait(self, other)) {
-                            danger = true;
-                            break;
-                        }
-                    }
-                }
-            }
-
-            if (danger) {
-                Actions::executeWait(self, dt, drones);
-            } else {
-                Actions::executeMove(self, next_waypoint);
-            }
+            // Movimiento directo, la repulsión dinámica en SwarmManager desvía el centro si hay conflicto
+            Actions::executeMove(self, next_waypoint);
         }
         else if (self.current_action == States::toInt(States::MatrixAction::WAITING)) {
-            // Re-evaluar peligro con negociación para reanudar
-            bool danger = false;
-            
-            // Radar check
-            for (const auto& other : all_matrices) {
-                if (other.id == self.id) continue;
-                if (Perceptions::Radar(self, 400.0f, 250.0f, {other}, drones)) {
-                    if (Perceptions::ShouldIWait(self, other)) {
-                        danger = true;
-                        break;
-                    }
-                }
-            }
-
-            // Vision check si ya estábamos en misión
-            if (!danger && self.current_state == States::toInt(States::MatrixState::MISSION_ACTIVE)) {
-                Vector2 next_waypoint = Highways::calculateNextWaypoint(self);
-                Perceptions::Direction vision_dir;
-                if (next_waypoint.x > self.center.x) vision_dir = Perceptions::Direction::RIGHT;
-                else if (next_waypoint.x < self.center.x) vision_dir = Perceptions::Direction::LEFT;
-                else if (next_waypoint.y > self.center.y) vision_dir = Perceptions::Direction::UP;
-                else vision_dir = Perceptions::Direction::DOWN;
-
-                if (Perceptions::Vision(self, vision_dir, 200.0f, all_matrices, drones)) {
-                    for (const auto& other : all_matrices) {
-                        if (other.id == self.id) continue;
-                        if (Perceptions::Vision(self, vision_dir, 200.0f, {other}, drones)) {
-                            if (Perceptions::ShouldIWait(self, other)) {
-                                danger = true;
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (!danger) {
-                self.center = self.current_target; 
-                if (self.current_state == States::toInt(States::MatrixState::STAGING)) {
+            // Solo reanudamos si el camino hacia arriba está despejado
+            if (self.current_state == States::toInt(States::MatrixState::STAGING)) {
+                if (!Perceptions::Vision(self, Perceptions::Direction::UP, 800.0f, all_matrices, drones)) {
                     self.current_action = States::toInt(States::MatrixAction::TAKEOFF);
-                } else {
-                    self.current_action = States::toInt(States::MatrixAction::FOLLOW_MATRIX);
                 }
+            } else {
+                // Para el seguimiento normal en autopista, reanudamos
+                self.current_action = States::toInt(States::MatrixAction::FOLLOW_MATRIX);
             }
         }
     }

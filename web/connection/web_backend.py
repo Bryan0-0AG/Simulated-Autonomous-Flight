@@ -9,6 +9,24 @@ from fastapi import FastAPI, WebSocket
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
+import sys
+import shutil
+
+# Configure absolute paths for shared modules
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+TELEMETRY_DIR = os.path.join(BASE_DIR, "telemetry")
+if TELEMETRY_DIR not in sys.path:
+    sys.path.insert(0, TELEMETRY_DIR)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: Start broadcast loops
+    task1 = asyncio.create_task(_broadcast_logs())
+    task2 = asyncio.create_task(_broadcast_telemetry())
+    yield
+    # Shutdown
+    task1.cancel()
+    task2.cancel()
 
 # ----------------------------------------------------------------
 # Shared state
@@ -16,9 +34,105 @@ import uvicorn
 cpp_process = None
 console_clients: set[WebSocket] = set()
 telemetry_clients: set[WebSocket] = set()
+
+app = FastAPI(lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# ----------------------------------------------------------------
+# API Endpoints
+# ----------------------------------------------------------------
 log_buffer: list[str] = []
 latest_frame: str = ""
 buildings_data: list = []  # Cached building list from C++
+cpp_orchestrator_conn = None # Connection object for sending commands to C++
+
+# ----------------------------------------------------------------
+# Cloud configuration
+# ----------------------------------------------------------------
+CLOUD_CONFIG_PATH = os.path.join(BASE_DIR, "cloud_config.json")
+
+def load_cloud_config():
+    if os.path.exists(CLOUD_CONFIG_PATH):
+        try:
+            with open(CLOUD_CONFIG_PATH, "r") as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"[Cloud] Error loading config: {e}")
+    return {
+        "remote_host": "127.0.0.1",
+        "remote_user": "ubuntu",
+        "remote_path": "~/Simulated-Autonomous-Flight",
+        "ssh_key": None,
+        "use_cloud": False
+    }
+
+def save_cloud_config(config):
+    try:
+        with open(CLOUD_CONFIG_PATH, "w") as f:
+            json.dump(config, f, indent=4)
+    except Exception as e:
+        print(f"[Cloud] Error saving config: {e}")
+
+# ----------------------------------------------------------------
+# Thread: Server for C++ Orchestrator (Port 9999)
+# ----------------------------------------------------------------
+def _orchestrator_server_thread():
+    """Listens for the C++ engine connection to receive telemetry and send commands."""
+    global cpp_orchestrator_conn
+    import socket
+    
+    server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    try:
+        server_sock.bind(("0.0.0.0", 9999))
+        server_sock.listen(1)
+        print("[Python Orchestrator] Listening for C++ engine on port 9999...")
+        
+        while True:
+            conn, addr = server_sock.accept()
+            print(f"[Python Orchestrator] Engine connected from {addr}")
+            cpp_orchestrator_conn = conn
+            
+            # Keep connection alive and read telemetry (optional for now)
+            try:
+                while True:
+                    data = conn.recv(1024)
+                    if not data:
+                        break
+                    # Here we could parse incoming telemetry JSON from C++
+            except Exception as e:
+                print(f"[Python Orchestrator] Connection error: {e}")
+            finally:
+                print("[Python Orchestrator] Engine disconnected.")
+                cpp_orchestrator_conn = None
+                conn.close()
+    except Exception as e:
+        print(f"[Python Orchestrator] Server error: {e}")
+    finally:
+        server_sock.close()
+
+threading.Thread(target=_orchestrator_server_thread, daemon=True).start()
+
+# ----------------------------------------------------------------
+# API Endpoints
+# ----------------------------------------------------------------
+@app.post("/api/engine/time_scale")
+async def set_time_scale(value: float):
+    global cpp_orchestrator_conn
+    if cpp_orchestrator_conn:
+        try:
+            msg = f"SET_TIME_SCALE:{value}"
+            cpp_orchestrator_conn.sendall(msg.encode())
+            return {"status": "ok", "value": value}
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+    return {"status": "error", "message": "C++ Engine not connected to orchestrator"}
 
 # ----------------------------------------------------------------
 # Thread: Read C++ stdout line by line (blocking I/O)
@@ -56,9 +170,12 @@ def _tcp_bridge_thread():
     while True:
         sock = None
         try:
+            config = load_cloud_config()
+            target_ip = config["remote_host"] if config.get("use_cloud") else "127.0.0.1"
+            
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.connect(("127.0.0.1", 9998))
-            print("[Python Bridge] Connected to C++ visualizer on port 9998")
+            sock.connect((target_ip, 9998))
+            print(f"[Python Bridge] Connected to C++ visualizer on {target_ip}:9998")
 
             while True:
                 # Read header (uint32)
@@ -188,22 +305,6 @@ async def _broadcast_telemetry():
                     telemetry_clients.discard(client)
         await asyncio.sleep(0.033)  # ~30 FPS
 
-@asynccontextmanager
-async def lifespan(app):
-    t1 = asyncio.create_task(_broadcast_logs())
-    t2 = asyncio.create_task(_broadcast_telemetry())
-    yield
-    t1.cancel()
-    t2.cancel()
-
-app = FastAPI(lifespan=lifespan)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 # ----------------------------------------------------------------
 # REST API - Engine lifecycle
@@ -220,8 +321,13 @@ async def start_engine():
             return {"status": "already_running", "pid": cpp_process.pid}
 
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-    print(f"[API] Launching 'make run_server' in {project_root}")
+    config = load_cloud_config()
     
+    if config.get("use_cloud") and config.get("remote_host") != "127.0.0.1":
+        print(f"[API] Launching remote engine on {config['remote_host']}")
+        return await start_remote_engine(config, project_root)
+
+    print(f"[API] Launching 'make run_server' in {project_root}")
     try:
         cpp_process = subprocess.Popen(
             ["make", "run_server"],
@@ -233,11 +339,92 @@ async def start_engine():
         )
         log_buffer.clear()
         buildings_data = [] 
-        log_buffer.append("[SwarmOS] Engine process started.\n")
+        log_buffer.append("[SwarmOS] Engine process started (LOCAL).\n")
         print(f"[API] Process started with PID: {cpp_process.pid}")
         return {"status": "started", "pid": cpp_process.pid}
     except Exception as e:
         print(f"[API] Failed to start process: {e}")
+        return {"status": "error", "message": str(e)}
+
+async def start_remote_engine(config, project_root):
+    global cpp_process, log_buffer, buildings_data
+    host = config["remote_host"]
+    user = config["remote_user"]
+    path = config["remote_path"]
+    key = config.get("ssh_key")
+    
+    ssh_prefix = ["ssh"]
+    if key:
+        ssh_prefix += ["-i", key]
+    ssh_prefix += [f"{user}@{host}"]
+    
+    # 1. Sync code (simplified for now: assume code is there or use scp for critical files)
+    # In a real scenario, we'd rsync here. For now, we'll just try to run make.
+    log_buffer.clear()
+    log_buffer.append(f"[SwarmOS] Connecting to AMD Cloud Droplet: {host}...\n")
+    
+    try:
+        # Build and Run remotely
+        # We use -t to allocate a pseudo-tty if needed, but for pipes it might be better without
+        cmd = f"cd {path} && make server && ./app_server"
+        
+        cpp_process = subprocess.Popen(
+            ssh_prefix + [cmd],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1
+        )
+        buildings_data = []
+        log_buffer.append(f"[SwarmOS] Remote process initiated (PID: {cpp_process.pid})\n")
+        return {"status": "started", "pid": cpp_process.pid, "remote": True}
+    except Exception as e:
+        log_buffer.append(f"[ERROR] Failed to connect to cloud: {e}\n")
+        return {"status": "error", "message": str(e)}
+
+@app.post("/api/cloud/config")
+async def update_cloud_config(config: dict):
+    save_cloud_config(config)
+    return {"status": "ok"}
+
+@app.get("/api/cloud/config")
+async def get_cloud_config():
+    return load_cloud_config()
+
+@app.post("/api/cloud/sync")
+async def sync_to_cloud():
+    config = load_cloud_config()
+    if not config.get("use_cloud"):
+        return {"status": "error", "message": "Cloud mode not enabled"}
+    
+    host = config["remote_host"]
+    user = config["remote_user"]
+    path = config["remote_path"]
+    key = config.get("ssh_key")
+    
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    
+    # Use scp to sync the whole project (excluding build and .git)
+    # This is a bit heavy for a web request, but okay for a hackathon
+    print(f"[Cloud] Syncing project to {host}...")
+    
+    # Note: On Windows, 'scp -r' might be slow. 
+    # A better way is to zip, scp, unzip.
+    try:
+        # For now, let's just try to scp the src and include directories
+        # This assumes the remote directory exists
+        scp_cmd = ["scp", "-r"]
+        if key:
+            scp_cmd += ["-i", key]
+        
+        # Syncing specific folders to avoid huge transfers
+        folders = ["src", "include", "Makefile"]
+        for folder in folders:
+            src_path = os.path.join(project_root, folder)
+            subprocess.run(scp_cmd + [src_path, f"{user}@{host}:{path}/"], check=True)
+            
+        return {"status": "synced"}
+    except Exception as e:
         return {"status": "error", "message": str(e)}
 
 @app.post("/api/engine/kill")
@@ -289,38 +476,26 @@ async def get_sessions():
     import os
     import sys
     
-    log_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "telemetry", "logs"))
-    telemetry_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "telemetry"))
-    if telemetry_dir not in sys.path:
-        sys.path.insert(0, telemetry_dir)
-        
+    log_dir = os.path.join(BASE_DIR, "telemetry", "logs")
     try:
         from dashboard import get_available_sessions
         return get_available_sessions(log_dir)
-    except ImportError as e:
-        print(f"Error importing dashboard module: {e}")
+    except Exception as e:
+        print(f"Error loading sessions: {e}")
         return []
 
 @app.get("/api/telemetry/data")
-async def get_telemetry_data(session: str):
-    import os
-    import sys
-    
-    log_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "telemetry", "logs"))
+async def get_telemetry_data(session: str, mission_id: int = None, matrix_id: int = None):
+    log_dir = os.path.join(BASE_DIR, "telemetry", "logs")
     file_path = os.path.join(log_dir, session, "Full_Telemetry.csv")
-    telemetry_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "telemetry"))
     
-    if telemetry_dir not in sys.path:
-        sys.path.insert(0, telemetry_dir)
-        
     try:
         from dashboard import load_full_data, process_telemetry_data
-        
         df = load_full_data(file_path)
         if df is None:
             return {"error": "Invalid or missing data"}
             
-        return process_telemetry_data(df)
+        return process_telemetry_data(df, mission_id=mission_id, matrix_id=matrix_id)
     except Exception as e:        
         import traceback
         traceback.print_exc()
