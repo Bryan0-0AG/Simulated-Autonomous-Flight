@@ -35,7 +35,7 @@ public:
         file_all << "time,num_drones,mission_id,id,pos_x,pos_y,vel_x,vel_y,"
                  << "target_x,target_y,thrust_val,angle_val,"
                  << "error_x,error_y,f_sep_x,f_sep_y,"
-                 << "action,state,battery,childs\n";
+                 << "action,state,battery,children\n";
     }
 
     void log(float time, int num_drones, const MatrixGroup& matrix, const std::vector<DroneChassis>& drones) {

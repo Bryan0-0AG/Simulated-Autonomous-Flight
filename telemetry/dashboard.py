@@ -55,6 +55,15 @@ def process_telemetry_data(df, mission_id=None, matrix_id=None):
         df['mission_id'] = df['mission_id'].fillna(0).astype(int)
         df['id'] = df['id'].fillna(0).astype(int)
 
+        # Standardize 'children' column name (legacy support for 'childs' or 'hijos')
+        if 'childs' in df.columns:
+            df.rename(columns={'childs': 'children'}, inplace=True)
+        elif 'hijos' in df.columns:
+            df.rename(columns={'hijos': 'children'}, inplace=True)
+        
+        if 'children' not in df.columns:
+            df['children'] = 0
+
         # Get ALL available IDs to maintain navigability
         all_missions = sorted([int(m) for m in df['mission_id'].unique().tolist() if m > 0])
         all_matrices = sorted([int(m) for m in df['id'].unique().tolist() if m > 0])
@@ -100,8 +109,8 @@ def process_telemetry_data(df, mission_id=None, matrix_id=None):
         # 3. AI Intelligence Distribution (2x2 Grid)
         latest_data = df.sort_values('time').groupby('id').tail(1)
         
-        # Rows with childs > 0 are Matrices. We use them for both.
-        matrices_df = latest_data[latest_data['childs'] > 0]
+        # Rows with children > 0 are Matrices. We use them for both.
+        matrices_df = latest_data[latest_data['children'] > 0]
         
         # Matrix Distribution: Direct counts of rows
         def get_matrix_dist(df_sub, col):
@@ -114,8 +123,8 @@ def process_telemetry_data(df, mission_id=None, matrix_id=None):
         def get_drone_dist(df_sub, col):
             if df_sub.empty or col not in df_sub.columns:
                 return {"labels": [], "values": []}
-            # Weighted count: sum childs grouped by the column
-            counts = df_sub.groupby(col)['childs'].sum()
+            # Weighted count: sum children grouped by the column
+            counts = df_sub.groupby(col)['children'].sum()
             return {"labels": counts.index.tolist(), "values": [int(v) for v in counts.values.tolist()]}
 
         dist_data = {
