@@ -118,5 +118,8 @@ void MissionOrchestrator::startMission(SwarmManager* swarm, ProceduralCity* city
 
         matrix_groups.push_back(m);
         active_spawn_plans.push_back(plan);
+
+        // Libera el edificio para que pueda ser usado en la proxima mision una vez spawneado el enjambre
+        city->getMutableBuildings()[plan.building_idx].is_mission_active = false;
     }
 }
