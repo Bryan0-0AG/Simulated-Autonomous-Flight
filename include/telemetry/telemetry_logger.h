@@ -42,7 +42,6 @@ public:
         Vector2 avg_pos = MatrixAI::Properties::getAveragePosition(matrix, drones);
         Vector2 avg_vel = MatrixAI::Properties::getAverageVelocity(matrix, drones);
         float avg_battery = MatrixAI::Properties::getAverageBattery(matrix, drones);
-        Vector2 avg_repulsion = MatrixAI::Properties::getAverageRepulsionForce(matrix, drones);
         float avg_thrust = MatrixAI::Properties::getAverageThrust(matrix, drones);
         float avg_angle = MatrixAI::Properties::getAverageAngle(matrix, drones);
         Vector2 avg_error = MatrixAI::Properties::getVectorError(matrix, drones);

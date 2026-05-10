@@ -470,7 +470,10 @@ document.addEventListener('DOMContentLoaded', () => {
             printToTerminal(line, 'stdout');
 
             // DYNAMIC DETECTION: State only changes when the engine actually starts
-            if (line.includes("[BRIDGE] Visualization server listening")) {
+            if (line.includes("[BRIDGE] Visualization server listening") || 
+                line.includes("[ORCHESTRATOR] Starting Mission") ||
+                line.includes("Second: 1 | Drones:")) {
+                
                 document.getElementById('cmd-engine-status').innerText = 'ACTIVE';
                 document.getElementById('cmd-engine-status').style.color = '#00ff80';
                 
@@ -534,7 +537,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.status === 'started' || data.status === 'already_running') {
                 printToTerminal("Subprocess launched. Monitoring build progress...", "system");
                 configInputs.forEach(input => {
-                    if (input.id !== 'cfg-time-scale') input.disabled = true;
+                    if (input.id !== 'cfg-time-scale') {
+                        input.disabled = true;
+                    } else {
+                        input.disabled = false; // Explicitly ensure slider is ENABLED
+                    }
                 });
                 btnKill.disabled = false;
             } else {
