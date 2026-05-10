@@ -24,12 +24,15 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const targetId = item.getAttribute('data-target');
             if (targetId) {
-                document.getElementById(targetId).classList.add('active');
-                if(targetId === 'view-command') {
-                    sidebarControls.style.display = 'block';
-                    setTimeout(resizeCanvas, 10);
-                } else {
-                    sidebarControls.style.display = 'none';
+                const targetEl = document.getElementById(targetId);
+                if (targetEl) {
+                    targetEl.classList.add('active');
+                    if(targetId === 'view-command') {
+                        sidebarControls.style.display = 'block';
+                        setTimeout(resizeCanvas, 10);
+                    } else {
+                        sidebarControls.style.display = 'none';
+                    }
                 }
             }
         });

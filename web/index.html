@@ -65,10 +65,10 @@
         </aside>
 
         <!-- Main Workspace -->
-        <main class="workspace" style="overflow-y: auto !important; scroll-behavior: smooth;">
+            <main class="workspace">
             
             <!-- VIEW 1: COMMAND CENTER -->
-            <section id="view-command" class="view-section" style="display: flex !important; flex-direction: column; gap: 2.5rem; width: 100%; margin-bottom: 4rem;">
+            <section id="view-command" class="view-section active">
                 <!-- Header Metrics -->
                 <header class="glass-panel topbar">
                     <div class="top-metric">
@@ -87,8 +87,8 @@
                 </header>
 
                 <!-- Render Target -->
-                <div class="canvas-container glass-panel" style="height: 600px; min-height: 600px; position: relative; flex: none;">
-                    <canvas id="swarmCanvas" style="width: 100%; height: 100%;"></canvas>
+                <div class="canvas-container glass-panel" style="flex: 1; min-height: 400px; position: relative;">
+                    <canvas id="swarmCanvas"></canvas>
                     <div class="canvas-overlay">
                         <h2 class="orbitron">LIVE SATELLITE FEED</h2>
                         <p class="coords">LAT: 34.0522° N | LNG: 118.2437° W</p>
@@ -97,7 +97,7 @@
             </section>
 
             <!-- VIEW 2: ANALYTICS (NATIVE DASHBOARD) -->
-            <section id="view-analytics" class="view-section glass-panel" style="padding: 2rem; margin-top: 2rem; border-top: 2px solid var(--primary-glow);">
+            <section id="view-analytics" class="view-section glass-panel">
                 <header class="section-header" style="padding: 0 0 1rem 0; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <h2 class="orbitron">FLEET INTELLIGENCE</h2>
