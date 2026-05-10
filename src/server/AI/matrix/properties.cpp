@@ -156,24 +156,24 @@ namespace Properties {
     void applyDynamicRepulsion(MatrixGroup& self, const std::vector<MatrixGroup>& all_matrices, const std::vector<DroneChassis>& drones, float dt) {
         if (self.children.empty()) return;
 
-        Vector2 myPos = getAveragePosition(self, drones);
+        Vector2 myPos = self.center; 
         Vector2 repulsionOffset = {0.0f, 0.0f};
         
         float myHalfW = (self.cols * self.col_spacing) * 0.5f;
         float myHalfH = (self.rows * self.row_spacing) * 0.5f;
         float myRadius = std::max(myHalfW, myHalfH);
-
-        float strength = 1200.0f; // Softer and more progressive force
+        float strength = 1200.0f; 
 
         for (const auto& other : all_matrices) {
             if (other.id == self.id || other.children.empty()) continue;
 
-            Vector2 otherPos = getAveragePosition(other, drones);
+            // OPTIMIZACIÓN: Usar el centro pre-calculado de la matriz en lugar de iterar drones
+            Vector2 otherPos = other.center; 
             float otherHalfW = (other.cols * other.col_spacing) * 0.5f;
             float otherHalfH = (other.rows * other.row_spacing) * 0.5f;
             float otherRadius = std::max(otherHalfW, otherHalfH);
             
-            float minSafeDist = myRadius + otherRadius + 500.0f; // Detect from much further away
+            float minSafeDist = myRadius + otherRadius + 500.0f; // Detectar desde lejos
             
             float dx = myPos.x - otherPos.x;
             float dy = myPos.y - otherPos.y;
@@ -183,12 +183,10 @@ namespace Properties {
                 float dist = std::sqrt(distSq);
                 float normDist = (minSafeDist - dist) / minSafeDist;
                 
-                // Linear Repulsion: much more predictable and smooth than exponential
                 float force = normDist * strength;
                 repulsionOffset.x += (dx / dist) * force;
-                repulsionOffset.y += (dy / dist) * force * 0.5f; // Greater smoothness on the vertical axis
+                repulsionOffset.y += (dy / dist) * force * 0.5f; 
 
-                // Frenado predictivo suave
                 self.velocity.x *= 0.99f;
                 self.velocity.y *= 0.99f;
             }
@@ -198,40 +196,36 @@ namespace Properties {
         desired_target.x = self.current_target.x + repulsionOffset.x;
         desired_target.y = self.current_target.y + repulsionOffset.y;
 
-        // Dynamic target smoothing to avoid vibrations (soft Lerp)
         float lerpFactor = 5.0f * dt; 
         if (lerpFactor > 1.0f) lerpFactor = 1.0f;
         
         self.dynamic_target.x += (desired_target.x - self.dynamic_target.x) * lerpFactor;
         self.dynamic_target.y += (desired_target.y - self.dynamic_target.y) * lerpFactor;
 
-        // Store for telemetry visualization
         self.last_repulsion = repulsionOffset;
     }
 
     void updateMatrixPhysics(MatrixGroup& self, float dt) {
-        // 1. Attraction to dynamic_target (smooth steering)
+        // 1. Attraction to dynamic_target
         float dx = self.dynamic_target.x - self.center.x;
         float dy = self.dynamic_target.y - self.center.y;
         float dist = std::sqrt(dx*dx + dy*dy);
         
         if (dist > 1.0f) {
             float speed = 400.0f;
-            // Reduce acceleration if very close to avoid "overshoot"
             float arrivalScaling = std::min(1.0f, dist / 200.0f);
             self.velocity.x += (dx / dist) * speed * arrivalScaling * dt;
             self.velocity.y += (dy / dist) * speed * arrivalScaling * dt;
         }
 
-        // 2. Virtual elastic ground (Soft Spring)
-        // Instead of teleporting, apply an upward force if below 150m
+        // 2. Virtual elastic ground
         if (self.current_action != States::toInt(States::MatrixAction::LANDING)) {
             float minHeight = 150.0f;
             if (self.center.y < minHeight) {
                 float penetration = minHeight - self.center.y;
-                float springK = 15.0f; // Elastic constant
-                self.velocity.y += penetration * springK; // Upward thrust
-                self.velocity.y *= 0.8f; // Rebound damping
+                float springK = 15.0f; 
+                self.velocity.y += penetration * springK; 
+                self.velocity.y *= 0.8f; 
             }
         }
 
