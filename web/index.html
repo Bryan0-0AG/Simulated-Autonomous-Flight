@@ -32,20 +32,6 @@
                 </a>
             </nav>
 
-            <nav class="controls" id="sidebar-controls">
-                <div class="control-group">
-                    <h3>Tactical Deployment</h3>
-                    <button id="btn-transport" class="btn primary-btn">
-                        <span class="icon">🚀</span> Start Transport Mission
-                    </button>
-                    <button id="btn-mass" class="btn warning-btn">
-                        <span class="icon">🔥</span> Mass Swarm Deploy
-                    </button>
-                    <button id="btn-recall" class="btn danger-btn">
-                        <span class="icon">⚠️</span> Emergency Recall
-                    </button>
-                </div>
-            </nav>
 
             <div class="system-status">
                 <h3>System Status</h3>
@@ -206,21 +192,6 @@
                 <p>Configure and control the ROCm engine.</p>
             </header>
             
-            <!-- Initial Configurations (Disabled when running) -->
-            <div class="config-form" id="engine-config-form">
-                <div class="form-group">
-                    <label>Drone PID (Proportional)</label>
-                    <input type="number" id="cfg-pid-p" value="1.5" step="0.1">
-                </div>
-                <div class="form-group">
-                    <label>Battery Drain Rate</label>
-                    <input type="number" id="cfg-battery" value="0.5" step="0.1">
-                </div>
-                <div class="form-group">
-                    <label>Max Swarm Density</label>
-                    <input type="number" id="cfg-density" value="5000" step="100">
-                </div>
-            </div>
 
             <!-- Real-time Time Scale Control (OUTSIDE THE FORM TO PREVENT LOCKING) -->
             <div style="margin-top: 1.5rem; border-top: 1px solid var(--glass-border); padding-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
@@ -235,30 +206,6 @@
                 </div>
             </div>
 
-            <!-- Cloud Connectivity -->
-            <div class="cloud-settings" style="margin-top: 1.5rem; border-top: 1px solid var(--glass-border); padding-top: 1rem;">
-                <h3 class="orbitron" style="font-size: 0.9rem; margin-bottom: 0.8rem; color: var(--highlight);">☁️ CLOUD CONNECTIVITY</h3>
-                <div class="form-group">
-                    <label>Use ROCm Cloud Droplet</label>
-                    <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
-                        <input type="checkbox" id="cfg-use-cloud" style="width: auto;">
-                        <span style="font-size: 0.8rem; color: var(--text-muted);">Enable Remote Execution</span>
-                    </div>
-                </div>
-                <div id="cloud-fields" style="display: none; margin-top: 10px;">
-                    <div class="form-group">
-                        <label>Droplet IP / Host</label>
-                        <input type="text" id="cfg-cloud-host" placeholder="e.g. 159.203.x.x" style="font-family: monospace;">
-                    </div>
-                    <div class="form-group">
-                        <label>SSH User</label>
-                        <input type="text" id="cfg-cloud-user" value="ubuntu">
-                    </div>
-                    <button id="btn-sync-cloud" class="btn outline-btn" style="width: 100%; margin-top: 10px; font-size: 0.8rem;">
-                        🔄 Sync Code to Droplet
-                    </button>
-                </div>
-            </div>
 
             <div style="display: flex; gap: 0.5rem; margin-top: 1.5rem; flex-shrink: 0;">
                 <button id="btn-boot-engine" class="btn primary-btn" style="flex: 1; padding: 1rem; font-size: 0.9rem;">
