@@ -11,6 +11,11 @@ def get_available_sessions(log_dir):
     date_pattern = re.compile(r'\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}')
     all_entries = os.listdir(log_dir)
     actual_dirs = sorted([d for d in all_entries if os.path.isdir(os.path.join(log_dir, d)) and date_pattern.match(d)], reverse=True)
+    
+    # Fallback: if no date-patterned dirs, return all subdirectories
+    if not actual_dirs:
+        actual_dirs = sorted([d for d in all_entries if os.path.isdir(os.path.join(log_dir, d))], reverse=True)
+        
     return actual_dirs
 
 def load_full_data(path):
