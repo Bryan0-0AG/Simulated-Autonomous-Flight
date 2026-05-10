@@ -533,7 +533,9 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (data.status === 'started' || data.status === 'already_running') {
                 printToTerminal("Subprocess launched. Monitoring build progress...", "system");
-                configInputs.forEach(input => input.disabled = true);
+                configInputs.forEach(input => {
+                    if (input.id !== 'cfg-time-scale') input.disabled = true;
+                });
                 btnKill.disabled = false;
             } else {
                 throw new Error(data.message || "Start failed");
