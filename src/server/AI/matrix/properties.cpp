@@ -204,6 +204,9 @@ namespace Properties {
         
         self.dynamic_target.x += (desired_target.x - self.dynamic_target.x) * lerpFactor;
         self.dynamic_target.y += (desired_target.y - self.dynamic_target.y) * lerpFactor;
+
+        // Store for telemetry visualization
+        self.last_repulsion = repulsionOffset;
     }
 
     void updateMatrixPhysics(MatrixGroup& self, float dt) {

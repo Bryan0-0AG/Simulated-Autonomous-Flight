@@ -215,7 +215,6 @@ bool NetworkBridge::receivePositions(std::vector<DroneChassis>& drones) {
 
 void NetworkBridge::pollCommands() {
     if (!isOrchestratorConnected) {
-        // Intentar reconectar automáticamente cada cierto tiempo
         static sf::Clock retryClock;
         if (retryClock.getElapsedTime().asSeconds() > 2.0f) {
             connect(SERVER_IP, SERVER_PORT);
@@ -224,23 +223,34 @@ void NetworkBridge::pollCommands() {
         return;
     }
 
-    char data[128];
+    char data[1024];
     std::size_t received;
     sf::Socket::Status status = orchestratorSocket.receive(data, sizeof(data) - 1, received);
 
     if (status == sf::Socket::Status::Done) {
         data[received] = '\0';
-        std::string cmd(data);
+        std::string buffer(data);
+        std::stringstream ss(buffer);
+        std::string cmd;
         
-        // Comando: SET_TIME_SCALE:0.5
-        if (cmd.find("SET_TIME_SCALE:") == 0) {
+        // Process multiple commands if they arrive together (separated by protocol or just concatenated)
+        // Note: The orchestrator sends commands like "SET_TIME_SCALE:X.X"
+        // If they are concatenated, we need to find all occurrences.
+        size_t pos = 0;
+        while ((pos = buffer.find("SET_TIME_SCALE:", pos)) != std::string::npos) {
+            size_t endPos = buffer.find("SET_TIME_SCALE:", pos + 15);
+            std::string subCmd = buffer.substr(pos, (endPos == std::string::npos) ? std::string::npos : endPos - pos);
+            
             try {
-                float newScale = std::stof(cmd.substr(15));
+                float newScale = std::stof(subCmd.substr(15));
                 TIME_SCALE = newScale;
                 std::cout << "[BRIDGE] Time Scale updated to: " << TIME_SCALE << std::endl;
             } catch (...) {
-                std::cerr << "[BRIDGE] Error al parsear TIME_SCALE" << std::endl;
+                // Ignore parse errors for partial commands
             }
+            
+            if (endPos == std::string::npos) break;
+            pos = endPos;
         }
     } else if (status == sf::Socket::Status::Disconnected) {
         isOrchestratorConnected = false;

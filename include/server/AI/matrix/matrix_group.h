@@ -35,12 +35,13 @@ public:
     int mission_id;          // ID de la misión a la que pertenece esta matriz
     int target_count = 0; // Cuántos drones esperamos realmente
     int lane = 0;
+    Vector2 last_repulsion;  // Track repulsion for telemetry
 
     bool isFull() const { return (int)children.size() >= target_count && target_count > 0; }
 
     MatrixGroup() : id(-1), rows(0), cols(0), center({0,0}), velocity({0,0}), col_spacing(0), row_spacing(0), 
         final_target({0,0}), current_target({0,0}), dynamic_target({0,0}),
-        current_state(0), current_action(0), mission_timer(0.0f), mission_id(0), target_count(0), lane(0) {}
+        current_state(0), current_action(0), mission_timer(0.0f), mission_id(0), target_count(0), lane(0), last_repulsion({0,0}) {}
     MatrixGroup(int id, Vector2 center, int cols, float col_spacing, int rows, float row_spacing)
         : id(id), rows(rows), cols(cols), center(center), velocity({0,0}), col_spacing(col_spacing), row_spacing(row_spacing), 
           final_target({0,0}), current_target(center), dynamic_target(center),

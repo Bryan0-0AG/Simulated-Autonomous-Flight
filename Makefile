@@ -96,3 +96,32 @@ run_client: client
 
 run_brain:
 	py ai_commander/brain.py
+
+# ==========================================
+# AUTOMATION & CLOUD WORKFLOW
+# ==========================================
+IP_DROPLET = 134.199.196.239
+
+# Generates an SSH tunnel for local dashboard access
+# Run this on your LOCAL terminal
+connect_rocm:
+	@echo "[HACKATHON] Establishing SSH Tunnel to AMD Cloud..."
+	ssh -L 8000:localhost:8000 root@$(IP_DROPLET)
+
+# Automates the deployment flow inside the droplet
+# Usage: make start_env branch=my-feature
+# Run this on your DROPLET terminal
+start_env:
+	@echo "[HACKATHON] Syncing environment and rebuilding..."
+	git fetch origin
+	@if [ -n "$(branch)" ]; then \
+		git checkout $(branch) && git pull origin $(branch); \
+	else \
+		git checkout main && git pull origin main; \
+	fi
+	make clean
+	make server
+	@echo "------------------------------------------------------"
+	@echo " Environment ready. Run 'source venv/bin/activate' "
+	@echo " then 'python web/connection/web_backend.py' "
+	@echo "------------------------------------------------------"

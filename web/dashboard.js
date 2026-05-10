@@ -9,10 +9,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const darkLayout = {
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
-        font: { color: '#c9d1d9', family: 'Inter, sans-serif' },
-        margin: { l: 40, r: 20, t: 10, b: 30 },
-        xaxis: { gridcolor: '#30363d', zerolinecolor: '#30363d' },
-        yaxis: { gridcolor: '#30363d', zerolinecolor: '#30363d' }
+        font: { color: '#c9d1d9', family: 'Inter, sans-serif', size: 10 },
+        margin: { l: 45, r: 15, t: 10, b: 35 },
+        xaxis: { gridcolor: '#30363d', zerolinecolor: '#30363d', tickfont: { size: 9 } },
+        yaxis: { gridcolor: '#30363d', zerolinecolor: '#30363d', tickfont: { size: 9 } }
     };
 
     let lastDashboardData = null;
@@ -153,7 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // --- 2x2 AI Intelligence Grid ---
             const aiConf = { 
                 ...darkLayout, 
-                margin: {l:5, r:5, t:5, b:5}, 
+                margin: {l:10, r:10, t:10, b:10}, 
                 showlegend: false,
                 autosize: true
             };

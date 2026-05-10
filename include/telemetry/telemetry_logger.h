@@ -56,7 +56,7 @@ public:
                  << matrix.current_target.x << "," << matrix.current_target.y << ","
                  << avg_thrust << "," << avg_angle << ","
                  << avg_error.x << "," << avg_error.y << ","
-                 << avg_repulsion.x << "," << avg_repulsion.y << ","
+                 << matrix.last_repulsion.x << "," << matrix.last_repulsion.y << ","
                  << MatrixAI::States::toString(MatrixAI::States::toAction(matrix.current_action)) << "," 
                  << MatrixAI::States::toString(MatrixAI::States::toState(matrix.current_state)) << ","
                  << avg_battery << ","
