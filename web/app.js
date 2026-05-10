@@ -489,9 +489,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 b.style.borderColor = "#00ff80";
                 b.style.background = "rgba(0, 255, 128, 0.1)";
 
-                // FORCE UNLOCK SLIDER: Even if the loop disabled it, we turn it on here
+                // FINAL SAFETY: Force enable the slider regardless of previous locks
                 const slider = document.getElementById('cfg-time-scale');
-                if (slider) slider.disabled = false;
+                if (slider) {
+                    slider.disabled = false;
+                    slider.style.opacity = "1";
+                    slider.style.pointerEvents = "auto";
+                }
             }
         };
         consoleSocket.onclose = () => setTimeout(connectConsoleWS, 2000);
@@ -525,6 +529,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btnBoot.innerHTML = `<span class="spinner"></span> Compiling...`;
         btnBoot.style.borderColor = "#888";
         
+        buildings = []; // CLEAR BUILDINGS FOR NEW RUN
         printToTerminal("Initiating ROCm build sequence...", "system");
         const compileCmd = `src/shared/world/procedural_city.cpp src/server/lab.cpp build/drone_dynamics.o -o app_server -lsfml-graphics -lsfml-window -lsfml-system -lsfml-network -L"C:/Program Files/AMD/ROCm/7.1/lib" -lamdhip64`;
         
