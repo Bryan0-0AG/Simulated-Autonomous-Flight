@@ -140,11 +140,15 @@ void SimulationEngine::handleLogicPerSecond() {
         last_brain_update = total_time;
     }
 
-    // Emitir JSON para el dashboard web (System Status Sidebar) cada segundo
-    std::cout << "[TELEMETRY] {"
-              << "\"active_drones\":" << stats.active_drones << ","
-              << "\"live_missions\":" << stats.live_missions
-              << "}" << std::endl;
+    // Emitir resumen global cada segundo para evitar saturar el terminal del navegador
+    static int telemetry_skip = 0;
+    if (++telemetry_skip >= 2) { // Solo cada 2 segundos reales
+        std::cout << "[TELEMETRY] {"
+                  << "\"active_drones\":" << stats.active_drones << ","
+                  << "\"live_missions\":" << stats.live_missions
+                  << "}" << std::endl;
+        telemetry_skip = 0;
+    }
 
     // Lógica Secuencial de Misiones: Solo lanzar si no hay spawneos activos
     static int pending_missions = MISSION_COUNT - 1; 
@@ -154,7 +158,7 @@ void SimulationEngine::handleLogicPerSecond() {
         pending_missions--;
     }
 
-    // File Telemetry (Local Dashboard)
+    // File Telemetry (Solo guardamos en CSV, NO imprimimos a consola para evitar lag)
     for (const auto& matrix : swarm->getMatrixGroups()) {
         logger->log(total_time, stats.active_drones, matrix, swarm->getDrones());
     }

@@ -11,7 +11,7 @@ constexpr bool HEADLESS_MODE = true; // Cloud Server: If true, calculates physic
 constexpr bool VIEWER_MODE = false;  // PC Client: If true, does NOT calculate physics, only receives data and renders.
 
 constexpr Vector2 WINDOW_SIZE = {1280.0f, 720.0f};      
-constexpr Vector2 WORLD_SIZE  = {100000.0f, 100000.0f}; 
+constexpr Vector2 WORLD_SIZE  = {250000.0f, 100000.0f}; 
 constexpr float DT = 0.016f;
 
 // ==============================
@@ -19,7 +19,7 @@ constexpr float DT = 0.016f;
 // ==============================
 
 // General
-constexpr int DRONE_COUNT = 10000;
+constexpr int DRONE_COUNT = 30000;
 constexpr float DRONE_SIZE = 4.0f;
 constexpr int BUILDINGS_TO_USE = -1; // -1 = all
 extern float TIME_SCALE;    // Now mutable from the UI
@@ -39,9 +39,9 @@ constexpr float BATCH_INTERVAL = 0.25f;    // Time between each batch of drones
 // Highways
 constexpr float HIGHWAY_WIDTH = 200.0f;
 constexpr float HIGHWAY_LANE_SPACING = 300.0f; // Vertical spacing between lanes
-constexpr int HIGHWAY_LANES_PER_DIR = 6;     // 6 outbound lanes, 6 inbound lanes (Total 12)
-constexpr float HIGHWAY_Y_OUTBOUND = 1300.0f; // Base height for outbound lane
-constexpr float HIGHWAY_Y_INBOUND = 3500.0f;  // Base height for inbound lane
+constexpr int HIGHWAY_LANES_PER_DIR = 12;     // 12 outbound lanes, 12 inbound lanes (Total 24)
+constexpr float HIGHWAY_Y_OUTBOUND = 800.0f; 
+constexpr float HIGHWAY_Y_INBOUND = 2500.0f;  
 
 // ==============================
 // CITY GENERATION
@@ -111,6 +111,6 @@ const unsigned short SERVER_PORT = 9999;
 // ==============================
 constexpr int PACKAGE_MIN_COUNT = 50;
 constexpr int PACKAGE_MAX_COUNT = 150;
-constexpr int MISSION_COUNT = 100;
+constexpr int MISSION_COUNT = 250;
 
 #endif // GLOBAL_CONFIG_H
