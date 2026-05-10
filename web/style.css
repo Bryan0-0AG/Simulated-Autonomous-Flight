@@ -309,9 +309,10 @@ body {
     border: 1px solid var(--glass-border);
     color: var(--primary);
     padding: 0.4rem 0.6rem;
-    border-radius: 4px;
     font-family: var(--font-tech);
     text-align: right;
+    outline: none;
+}{
     outline: none;
 }
 
@@ -509,3 +510,40 @@ body {
     font-family: var(--font-tech);
     margin-top: 0.25rem;
 }
+
+/* Analytics Grid Fixes v1.2.6 */
+.analytics-grid { 
+    display: grid !important; 
+    grid-template-columns: repeat(3, 1fr) !important; 
+    gap: 1.5rem; 
+    width: 100%; 
+}
+
+@media (max-width: 1400px) { 
+    .analytics-grid { 
+        grid-template-columns: repeat(2, 1fr) !important; 
+    } 
+}
+
+@media (max-width: 900px) { 
+    .analytics-grid { 
+        grid-template-columns: 1fr !important; 
+    } 
+    .glass-panel[style*="grid-column: span 2"] { 
+        grid-column: span 1 !important; 
+    } 
+}
+
+.glass-panel { 
+    position: relative !important; 
+    overflow: hidden !important; 
+    display: flex !important; 
+    flex-direction: column !important; 
+}
+
+.js-plotly-plot, .plot-container { 
+    width: 100% !important; 
+    max-width: 100% !important; 
+    height: 100% !important; 
+}
+

@@ -39,9 +39,9 @@ constexpr float BATCH_INTERVAL = 0.25f;    // Time between each batch of drones
 // Highways
 constexpr float HIGHWAY_WIDTH = 200.0f;
 constexpr float HIGHWAY_LANE_SPACING = 300.0f; // Vertical spacing between lanes
-constexpr int HIGHWAY_LANES_PER_DIR = 3;     // 3 outbound lanes, 3 inbound lanes
+constexpr int HIGHWAY_LANES_PER_DIR = 6;     // 6 outbound lanes, 6 inbound lanes (Total 12)
 constexpr float HIGHWAY_Y_OUTBOUND = 1300.0f; // Base height for outbound lane
-constexpr float HIGHWAY_Y_INBOUND = 2500.0f;  // Base height for inbound lane
+constexpr float HIGHWAY_Y_INBOUND = 3500.0f;  // Base height for inbound lane
 
 // ==============================
 // CITY GENERATION
