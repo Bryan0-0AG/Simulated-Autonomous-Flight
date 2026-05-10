@@ -505,12 +505,6 @@ body {
     } 
 }
 
-.glass-panel { 
-    position: relative !important; 
-    overflow: hidden !important; 
-    display: flex !important; 
-    flex-direction: column !important; 
-}
 
 .js-plotly-plot, .plot-container { 
     width: 100% !important; 
