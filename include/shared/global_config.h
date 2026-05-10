@@ -111,6 +111,6 @@ const unsigned short SERVER_PORT = 9999;
 // ==============================
 constexpr int PACKAGE_MIN_COUNT = 50;
 constexpr int PACKAGE_MAX_COUNT = 150;
-constexpr int MISSION_COUNT = 20;
+constexpr int MISSION_COUNT = 100;
 
 #endif // GLOBAL_CONFIG_H

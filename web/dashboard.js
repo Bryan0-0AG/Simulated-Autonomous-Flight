@@ -220,4 +220,15 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!changed) loadDashboardData();
         }
     }, 5000);
+
+    // --- RESPONSIVE FIX ---
+    window.addEventListener('resize', () => {
+        const plots = ['plot-traj', 'plot-drone-states', 'plot-drone-actions', 
+                       'plot-matrix-states', 'plot-matrix-actions', 'plot-pid', 
+                       'plot-power', 'plot-actuator', 'plot-collision', 'plot-kinematic'];
+        plots.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) Plotly.Plots.resize(el);
+        });
+    });
 });
