@@ -28,10 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (targetEl) {
                     targetEl.classList.add('active');
                     if(targetId === 'view-command') {
-                        sidebarControls.style.display = 'block';
                         setTimeout(resizeCanvas, 10);
-                    } else {
-                        sidebarControls.style.display = 'none';
                     }
                 }
             }
@@ -386,24 +383,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    document.getElementById('btn-transport').addEventListener('click', () => {
-        for(let i=0; i<50; i++) {
-            fakeDrones.push({
-                x: WORLD_W / 2,
-                y: 100,
-                vx: (Math.random() - 0.5) * 2000,
-                vy: Math.random() * 2000 + 500
-            });
-        }
-        document.getElementById('stat-missions').innerText = 1;
-    });
-
-    document.getElementById('btn-recall').addEventListener('click', () => {
-        fakeDrones = [];
-        drones = [];
-        document.getElementById('stat-drones').innerText = 0;
-        document.getElementById('stat-missions').innerText = 0;
-    });
 
     // ================================================================
     // TELEMETRY WEBSOCKET (drone positions from C++)
@@ -589,7 +568,6 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('stat-fps').innerText = '0 FPS';
             
             // Unlock UI
-            configInputs.forEach(input => input.disabled = false);
             btnBoot.disabled = false;
             btnBoot.innerHTML = `Boot Engine`;
             btnBoot.style.borderColor = "";
