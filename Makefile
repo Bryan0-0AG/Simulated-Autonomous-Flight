@@ -122,6 +122,14 @@ start_env:
 	make clean
 	make server
 	@echo "------------------------------------------------------"
-	@echo " Environment ready. Run 'source venv/bin/activate' "
-	@echo " then 'python web/connection/web_backend.py' "
+	@echo " Environment ready. Run 'make run_web' to start "
 	@echo "------------------------------------------------------"
+
+# Starts the Python Backend (automatically uses venv if present)
+run_web:
+	@echo "[HACKATHON] Starting SwarmOS Web Interface..."
+	@if [ -d "venv" ]; then \
+		./venv/bin/python web/connection/web_backend.py; \
+	else \
+		python3 web/connection/web_backend.py; \
+	fi
