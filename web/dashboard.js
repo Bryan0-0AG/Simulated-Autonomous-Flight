@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
         paper_bgcolor: 'rgba(0,0,0,0)',
         plot_bgcolor: 'rgba(0,0,0,0)',
         font: { color: '#c9d1d9', family: 'Inter, sans-serif', size: 10 },
-        margin: { l: 45, r: 15, t: 10, b: 35 },
+        margin: { l: 50, r: 20, t: 30, b: 40 }, // Slightly more margin for labels
         xaxis: { gridcolor: '#30363d', zerolinecolor: '#30363d', tickfont: { size: 9 } },
         yaxis: { gridcolor: '#30363d', zerolinecolor: '#30363d', tickfont: { size: 9 } }
     };
