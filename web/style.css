@@ -243,6 +243,27 @@ body {
 
 .view-section.active {
     display: flex !important;
+    overflow-y: auto !important; /* Ensure scrolling works even if glass-panel has overflow:hidden */
+}
+
+/* Premium Scrollbar Styling */
+.view-section::-webkit-scrollbar {
+    width: 6px;
+}
+
+.view-section::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+}
+
+.view-section::-webkit-scrollbar-thumb {
+    background: var(--glass-border);
+    border-radius: 10px;
+    border: 1px solid rgba(0, 210, 255, 0.1);
+}
+
+.view-section::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-glow);
 }
 
 .view-section > * {
