@@ -472,7 +472,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // DYNAMIC DETECTION: State only changes when the engine actually starts
             if (line.includes("[BRIDGE] Visualization server listening") || 
                 line.includes("[ORCHESTRATOR] Starting Mission") ||
-                line.includes("Second: 1 | Drones:")) {
+                line.includes("Second:")) {
                 
                 document.getElementById('cmd-engine-status').innerText = 'ACTIVE';
                 document.getElementById('cmd-engine-status').style.color = '#00ff80';
@@ -488,6 +488,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 b.innerHTML = `<span class="icon">🚀</span> Engine Started`;
                 b.style.borderColor = "#00ff80";
                 b.style.background = "rgba(0, 255, 128, 0.1)";
+
+                // FORCE UNLOCK SLIDER: Even if the loop disabled it, we turn it on here
+                const slider = document.getElementById('cfg-time-scale');
+                if (slider) slider.disabled = false;
             }
         };
         consoleSocket.onclose = () => setTimeout(connectConsoleWS, 2000);
